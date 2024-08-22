@@ -5,7 +5,7 @@ import TopBar from "./screens/global/topBar";
 import Dashboard from "./screens/dashboard";
 import Sidebar from  "./screens/global/sideBar";
 import {Routes, Route} from "react-router-dom";
-
+import Team from "./screens/team/index";
 
 function App() {
   const [theme , colorMode]=useMode();
@@ -20,8 +20,9 @@ function App() {
                 <TopBar></TopBar> 
                 <Routes>
                     <Route path="/" element={<Dashboard></Dashboard>}></Route>
-
+                    <Route path="/team" element={<Team></Team>}></Route>
                 </Routes>
+
                 </main>
             </div>
      </ThemeProvider>
