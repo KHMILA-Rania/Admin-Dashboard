@@ -6,7 +6,8 @@ import Dashboard from "./screens/dashboard";
 import Sidebar from  "./screens/global/sideBar";
 import {Routes, Route} from "react-router-dom";
 import Team from "./screens/team/index";
-
+import Contacts from "./screens/contacts";
+import Invoices from "./screens/invoices";
 function App() {
   const [theme , colorMode]=useMode();
   return (
@@ -21,6 +22,8 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Dashboard></Dashboard>}></Route>
                     <Route path="/team" element={<Team></Team>}></Route>
+                    <Route path="/contacts" element={<Contacts></Contacts>}></Route>
+                    <Route path="/invoices" element={<Invoices></Invoices>}></Route>
                 </Routes>
 
                 </main>
