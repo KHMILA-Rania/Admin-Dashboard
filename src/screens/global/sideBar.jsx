@@ -25,7 +25,7 @@ const Item =({title , to , selected ,icon, setSelected})=>{
         active={selected===title} 
         style={{color:colors.grey[100]}} 
         onClick={()=>setSelected(title)}
-        icon={icon}
+        
         >
          
          <Link to={to} style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
