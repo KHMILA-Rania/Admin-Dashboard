@@ -8,6 +8,7 @@ import {Routes, Route} from "react-router-dom";
 import Team from "./screens/team/index";
 import Contacts from "./screens/contacts";
 import Invoices from "./screens/invoices";
+import Calendar from "./screens/calendar";
 import Form from "./screens/form";
 function App() {
   const [theme , colorMode]=useMode();
@@ -25,6 +26,7 @@ function App() {
                     <Route path="/team" element={<Team></Team>}></Route>
                     <Route path="/contacts" element={<Contacts></Contacts>}></Route>
                     <Route path="/invoices" element={<Invoices></Invoices>}></Route>
+                    <Route path="/calendar" element={<Calendar></Calendar>}></Route>
                     <Route path="/form" element={<Form></Form>}></Route>
                 </Routes>
 
