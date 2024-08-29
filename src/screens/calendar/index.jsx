@@ -16,20 +16,29 @@ const Calendar = () => {
    const handleDateClick = (selected) => {
     const title=prompt("please enter new title for your event ");
     const calendarApi=selected.view.calendar;
+    calendarApi.unselect();
 
-    if(title){
-        calendarApi.addEvent({
-            id:`${selected.dateStr}-${title}`,
+    if(title) {
+        const newEvent = {
+            id: `${selected.dateStr}-${title}`,
             title,
             start: selected.startStr,
-            end:selected.endStr,
-            allDay:selected.allDay
-        });
+            end: selected.endStr || selected.startStr, // Ensure the end date is handled
+            allDay: selected.allDay,
+        };
+
+        calendarApi.addEvent(newEvent);
+        console.log(newEvent);
+        setCurrentEvents([...currentEvents, newEvent]); // Update the state with the new event
     }
-    };
+};
+
     const handleEventClick=(selected)=>{
         if(window.confirm(`are you sure you wnat to delete this event '${selected.event.title}'?`)){
             selected.event.remove();
+            setCurrentEvents((prevEvents) =>
+                prevEvents.filter((event) => event.id !== selected.event.id)
+            );
     }};
    
     return (
@@ -45,24 +54,31 @@ const Calendar = () => {
                         Events
                     </Typography>
                     <List>
-                        {currentEvents.map((event)=>{
-                            <ListItem key={event.id}
-                            sx={{backgroundColor:colors.greenAccent[500],
-                                margin:"10px 0", borderRadius:"2px"
-                            }}>
-                                <ListItemText primary={event.title}
-                                secondary={
-                                    <Typography>{formatDate(event.start,{
-                                        year:"numeric",
-                                        month: "short",
-                                        day: "numeric"
-                                    })}</Typography>
-                                }>
-
-                                </ListItemText>
-                            </ListItem>
+    {currentEvents.map((event) => (
+        <ListItem
+            key={event.id}
+            sx={{
+                backgroundColor: colors.greenAccent[500],
+                margin: "10px 0",
+                borderRadius: "2px",
+            }}
+        >
+            <ListItemText
+                primary={event.title}
+                secondary={
+                    <Typography>
+                        {formatDate(event.start, {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
                         })}
-                    </List>
+                    </Typography>
+                }
+            />
+        </ListItem>
+    ))}
+</List>
+
 
                 </Box>
                 {/*Calendar*/ }
