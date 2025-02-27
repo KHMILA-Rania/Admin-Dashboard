@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import User from '../models/user.js';  // Adjust if the path is different
 import Role from '../models/role.js';
 import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
 
 const register=async (req,res)=>{
     try{
@@ -93,9 +94,140 @@ const login =async (req, res) => {
         console.error('Error during login:', err);
         return res.status(500).send('something went wrong ');
     }
+};
+
+
+
+const sendPasswordReset= async(req,res)=>{
+    try{
+        const {email}=req.body;
+        const user=await User.findOne({email});
+
+        if(!user){
+            return res.status(404).json({message: 'User not found'});
+        }
+
+        const resetToken=jwt.sign(
+            {userId: user._id},
+            process.env.JWT_SECRET,
+            {expiresIn: '30m'}
+        );
+
+        const resetLink=`http://localhost:3000/auth/reset-password/${resetToken}`;
+        
+        
+        const transporter=nodemailer.createTransport({
+            service:'gmail',
+         
+            port: 587,
+            secure: false,
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASSWORD
+            },
+            tls: {
+                rejectUnauthorized: false,  // Disable rejecting unauthorized SSL certificates (optional)
+              },
+        });
+        
+        const mailOptions={
+            from : {
+                name:"VoltWise Solutions",
+                adress: process.env.SMPTP_USER},
+            to: email,
+            subject: 'Password Reset',
+            html: `
+                 <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Password Reset</title>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f7fc;
+                    margin: 0;
+                    padding: 0;
+                }
+                .container {
+                    max-width: 600px;
+                    margin: 50px auto;
+                    background-color: #ffffff;
+                    border-radius: 8px;
+                    padding: 30px;
+                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                }
+                .header {
+                    text-align: center;
+                    color: #2a3d66;
+                }
+                .header h1 {
+                    font-size: 28px;
+                    margin-bottom: 10px;
+                }
+                .content {
+                    font-size: 16px;
+                    line-height: 1.5;
+                    color: #333333;
+                    margin-top: 20px;
+                }
+                .btn {
+                    display: inline-block;
+                    padding: 15px 30px;
+                    margin-top: 20px;
+                    background-color: #007bff;
+                    color: #ffffff;
+                    font-size: 16px;
+                    text-decoration: none;
+                    border-radius: 5px;
+                    text-align: center;
+                }
+                .btn:hover {
+                    background-color: #0056b3;
+                }
+                .footer {
+                    text-align: center;
+                    margin-top: 30px;
+                    font-size: 12px;
+                    color: #777777;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Password Reset Request</h1>
+                </div>
+                <div class="content">
+                    <p>Hello,</p>
+                    <p>We received a request to reset your password. Click the button below to reset your password:</p>
+                    <a href="${resetLink}" class="btn">Reset Password</a>
+                    <p>If you did not request a password reset, please ignore this email.</p>
+                </div>
+                <div class="footer">
+                    <p>&copy; 2025 Voltwise Solutions. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+                `
+        };
+        console.log(resetLink)
+       
+        await transporter.sendMail(mailOptions);
+        return res.status(200).json({message: 'Reset password email sent'});
+      
+    }
+    catch(err){
+        console.error('Error sending password reset email:', err);
+        return res.status(500).json({message: 'Something went wrong'});
+    }
 }
 
 
 export  {register,
     login,
+    sendPasswordReset,
+ 
 };

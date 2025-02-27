@@ -4,10 +4,12 @@ import mongoose  from 'mongoose';
 import authRoutes from './routes/authRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
 import userRoutes from './routes/userRoutes.js'; 
-
-const app = express();
+import nodemailer from 'nodemailer';
 dotenv.config();
+const app = express();
+
 app.use(express.json());
+
 
 const PORT = process.env.PORT || 3001;
 
@@ -21,6 +23,7 @@ mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
     console.log('MongoDB connection error:', err);
   });
 
+ 
 
 //auth routes
 app.use('/auth',authRoutes);
@@ -34,6 +37,7 @@ app.use('/user',userRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
+   
   });
 
 
