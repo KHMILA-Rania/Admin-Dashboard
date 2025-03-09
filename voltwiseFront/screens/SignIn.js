@@ -16,12 +16,12 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Don't forget to import AsyncStorage
 
 function SignIn({props}) {
-  const navigation = useNavigation(); // Hook to get the navigation object
+  const navigation = useNavigation(); 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Handle form submission for login
+ 
   function handleSubmit() {
     console.log('Email:', email); // Debugging: Log email
     console.log('Password:', password); // Debugging: Log password
@@ -33,7 +33,7 @@ function SignIn({props}) {
 
     // Send post request to login endpoint
     axios
-      .post('http://192.168.1.119:3000/auth/login', userData)
+      .post('http://192.168.1.201:3000/auth/login', userData)
       .then(res => {
         console.log('Response:', res); // Debugging: Log the response
         console.log('Response Data:', res.data); // Debugging: Log the response
@@ -151,7 +151,7 @@ function SignIn({props}) {
               <TouchableOpacity
                 style={style.inBut2}
                 onPress={() => {
-                  navigation.navigate('Register');
+                  navigation.navigate('SignUp');
                 }}>
                 <FontAwesome
                   name="user-plus"

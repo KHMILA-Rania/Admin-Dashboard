@@ -9,7 +9,7 @@ import cors from 'cors';
 dotenv.config();
 const app = express();
 app.use(cors({
-  origin:  'http://192.168.1.132:3000'
+  origin:  'http://192.168.137.137:3000'
 }));
 app.use(express.json());
 
