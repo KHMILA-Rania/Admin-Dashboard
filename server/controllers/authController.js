@@ -67,7 +67,7 @@ const login =async (req, res) => {
         
         if(!ispasswordCorrect) {
             console.log('Password incorrect');
-            return res.status(404).send("password incorrect");
+            return res.status(401).send("password incorrect");
         }
         const token = jwt.sign({
             id: user._id,  role:user.role
@@ -176,8 +176,8 @@ const sendPasswordReset= async(req,res)=>{
                     display: inline-block;
                     padding: 15px 30px;
                     margin-top: 20px;
-                    background-color: #007bff;
-                    color: #ffffff;
+                    background-color:rgb(149, 176, 205);
+                    color: #000000;
                     font-size: 16px;
                     text-decoration: none;
                     border-radius: 5px;
@@ -225,9 +225,73 @@ const sendPasswordReset= async(req,res)=>{
     }
 }
 
+const resetPassword = async (req, res) => {
+    console.log('Reset password route reached');
+
+    const { token } = req.params;
+    let decodedToken;
+
+    try {
+        // Decoding the JWT token
+        decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+        console.log('Decoded token:', decodedToken);
+
+        // Find user by decoded userId
+        const user = await User.findById(decodedToken.userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Check if password exists in the request body
+        if (!req.body.password) {
+            return res.status(400).json({ message: 'Password is required' });
+        }
+
+        // Log the password to check if it's coming through correctly
+        console.log('Password from request body:', req.body.password);
+
+        // Hash the password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(req.body.password, saltRounds);
+        console.log('Hashed password:', hashedPassword);
+
+        // Update password (make sure to hash the password first)
+        user.password = hashedPassword;
+
+        // Save the updated user
+        await user.save();
+
+        // Send a success response only once
+        return res.status(200).json({ message: 'Password reset successful' });
+
+    } catch (err) {
+        console.error('Error resetting password:', err);
+        
+        // Check if response headers have already been sent
+        if (!res.headersSent) {
+            return res.status(500).json({ message: 'Something went wrong' });
+        }
+    }
+};
+
+const resetPasswordPage = (req, res) => {
+    const { token } = req.params;
+    // Verify the token
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // If token is valid, render password reset page
+        res.render('reset-password', { token });  // Or serve the HTML page
+    } catch (err) {
+        return res.status(400).send("Invalid or expired token");
+    }
+};
+
+
 
 export  {register,
     login,
     sendPasswordReset,
+    resetPassword,
+    resetPasswordPage,
  
 };

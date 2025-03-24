@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { IconButton } from 'react-native-paper';
 import {useNavigation} from '@react-navigation/native';
 import style from './style';
 import Feather from 'react-native-vector-icons/Feather';
@@ -20,7 +21,9 @@ function SignIn({props}) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
+const goHome=()=>{
+  navigation.navigate('Home');
+}
  
   function handleSubmit() {
     console.log('Email:', email); // Debugging: Log email
@@ -33,7 +36,7 @@ function SignIn({props}) {
 
     // Send post request to login endpoint
     axios
-      .post('http://192.168.1.201:3000/auth/login', userData)
+      .post('http://192.168.1.177:3000/auth/login', userData)
       .then(res => {
         console.log('Response:', res); // Debugging: Log the response
         console.log('Response Data:', res.data); // Debugging: Log the response
@@ -85,7 +88,9 @@ function SignIn({props}) {
           />
         </View>
         <View style={style.loginContainer}>
-          <Text style={style.text_header}>Login !!!</Text>
+          <Text style={style.text_header}>Welcome Back</Text>
+          <Text style={{color: 'gray', fontWeight: '900', textAlign:'center', marginBottom: 20 , marginTop: 10}}>
+            Login to your account</Text>
           <View style={style.action}>
             <FontAwesome
               name="user-o"
@@ -93,8 +98,9 @@ function SignIn({props}) {
               style={style.smallIcon}
             />
             <TextInput
-              placeholder="Mobile or Email"
+              placeholder="Email"
               style={style.textInput}
+              placeholderTextColor="gray" 
               onChange={e => setEmail(e.nativeEvent.text)}
             />
           </View>
@@ -103,6 +109,7 @@ function SignIn({props}) {
             <TextInput
               placeholder="Password"
               style={style.textInput}
+              placeholderTextColor="gray" 
               onChange={e => setPassword(e.nativeEvent.text)}
             />
           </View>
@@ -113,7 +120,7 @@ function SignIn({props}) {
               marginTop: 8,
               marginRight: 10,
             }}>
-            <Text style={{color: 'gray', fontWeight: '700'}}>Forgot Password</Text>
+            <Text style={{color: 'gray', fontWeight: '700'}} onPress={()=>navigation.navigate('ResetPassword')}>Forgot Password</Text>
           </View>
         </View>
         <View style={style.button}>
@@ -134,12 +141,11 @@ function SignIn({props}) {
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
-              <TouchableOpacity style={style.inBut2}>
-                <FontAwesome
-                  name="user-circle-o"
-                  color="white"
-                  style={style.smallIcon2}
-                />
+              <TouchableOpacity style={style.inBut2} onPress={goHome}>
+              <Image
+                source={require('../assets/invite-vedette.png')} // Path to your image
+                style={{ width: 20, height: 20 }}
+              />
               </TouchableOpacity>
               <Text style={style.bottomText}>Guest</Text>
             </View>
@@ -153,11 +159,11 @@ function SignIn({props}) {
                 onPress={() => {
                   navigation.navigate('SignUp');
                 }}>
-                <FontAwesome
-                  name="user-plus"
-                  color="white"
-                  style={[style.smallIcon2, {fontSize: 30}]}
-                />
+               <Image
+                source={require('../assets/apps-add.png')} // Path to your image
+                style={{ width: 20, height: 20 }}
+              />
+ 
               </TouchableOpacity>
               <Text style={style.bottomText}>Sign Up</Text>
             </View>
@@ -169,11 +175,10 @@ function SignIn({props}) {
               <TouchableOpacity
                 style={style.inBut2}
                 onPress={() => alert('Coming Soon')}>
-                <FontAwesome
-                  name="google"
-                  color="white"
-                  style={[style.smallIcon2, {fontSize: 30}]}
-                />
+               <Image
+                source={require('../assets/google.png')} // Path to your image
+                style={{ width: 20, height: 20 }}
+              />
               </TouchableOpacity>
               <Text style={style.bottomText}>Google</Text>
             </View>
@@ -185,11 +190,10 @@ function SignIn({props}) {
               <TouchableOpacity
                 style={style.inBut2}
                 onPress={() => alert('Coming Soon')}>
-                <FontAwesome
-                  name="facebook-f"
-                  color="white"
-                  style={[style.smallIcon2, {fontSize: 30}]}
-                />
+                   <Image
+                source={require('../assets/facebook.png')} // Path to your image
+                style={{ width: 20, height: 20 }}
+              />
               </TouchableOpacity>
               <Text style={style.bottomText}>Facebook</Text>
             </View>

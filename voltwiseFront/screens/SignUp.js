@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Text, View,TextInput, TouchableOpacity, StyleSheet ,Alert, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import axios from 'axios';
+import style from "./style";
 
 function SignUp(){
     const navigation = useNavigation();
@@ -48,7 +49,7 @@ function SignUp(){
           };
     
           // Make the API request to register the user
-          const response = await axios.post('http://192.168.1.201:3000/auth/register', userData);
+          const response = await axios.post('http://192.168.1.177:3000/auth/register', userData);
     
           // Check the response and handle accordingly
           if (response.status === 200) {
@@ -67,80 +68,110 @@ function SignUp(){
   
 
     return(
+      <ScrollView>
         <View style={styles.container}>
-        <Text style={styles.header}>Sign Up</Text>
-        <Text>Name</Text>
+        <Text style={style.text_header}>Sign Up</Text>
+        <Text style={{color: 'gray', fontWeight: '900', textAlign:'center', marginBottom: '20' , marginTop: '10'}}>sign up and accelerate your experience!</Text>
+  <View style={styles.containerSignUP}>
+
+        <Text style={styles.InputLabel}>Name</Text>
+        <View style={style.action}>
         <TextInput
-          style={styles.input}
+           style={style.textInput}
           placeholder="Name"
+          placeholderTextColor={'gray'}
           value={name}
           onChangeText={setName}
         />
+        </View>
 
-        <Text>email</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
+      <Text style={styles.InputLabel}>email</Text>
+      <View style={style.action}>
+              
+              <TextInput
+                style={style.textInput}
+                placeholder="Email"
+                placeholderTextColor={'gray'}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+              />
+      </View>
 
-        <Text>password</Text>
+
+        <Text style={styles.InputLabel}>password</Text>
+
+        <View style={style.action}>
         <TextInput
-          style={styles.input}
+          style={style.textInput}
           placeholder="Password"
+          placeholderTextColor={'gray'}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
-        <Text>Adress</Text>
+        </View>
+        <Text style={styles.InputLabel}>Adress</Text>
 
+        <View style={style.action}>
         <TextInput
-          style={styles.input}
+          style={style.textInput}
           placeholder="Address"
+          placeholderTextColor={'gray'}
           value={adress}
           onChangeText={setAdress}
         />
-
-        <Text>Phone number</Text>
+      </View>
+        <Text style={styles.InputLabel}>Phone number</Text>
+        <View style={style.action}>
         <TextInput
-          style={styles.input}
+          style={style.textInput}
           placeholder="Phone Number"
           value={phoneNumber}
+          placeholderTextColor={'gray'}
           onChangeText={setPhoneNumber}
           keyboardType="phone-pad"
         />
-
-        <Text>Age</Text>
+      </View>
+        <Text style={styles.InputLabel}>Age</Text>
+        <View style={style.action}>
         <TextInput
-          style={styles.input}
+          style={style.textInput}
           placeholder="Age"
+          placeholderTextColor={'gray'}
           value={age}
           onChangeText={setAge}
           keyboardType="numeric"
         />
+        </View>
 
-        <Text>Vehicle Type (Optional)</Text>
+        <Text style={styles.InputLabel}>Vehicle Type (Optional)</Text>
+        <View style={style.action}>
         <TextInput
-          style={styles.input}
+          style={style.textInput}
           placeholder="Vehicle Type (Optional)"
+          placeholderTextColor={'gray'}
           value={vehicleType}
           onChangeText={setVehicleType}
         />
+        </View>
 
-        <Text>Plug Type (Optional)</Text>
+        <Text style={styles.InputLabel}>Plug Type (Optional)</Text>
+        <View style={style.action}>
         <TextInput
-          style={styles.input}
+          style={style.textInput}
           placeholder="Plug Type (Optional)"
           value={plugType}
+          placeholderTextColor={'gray'}
           onChangeText={setPlugType}
         />
-  
+    </View>
+    </View>
         <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-          <Text style={styles.buttonText}>Register</Text>
+          <Text style={[style.inBut, { color: 'white',textAlign:'center', fontWeight:'900'},style.textSign]}>Register</Text>
         </TouchableOpacity>
       </View>
+      </ScrollView>
     );
     
 }
@@ -160,15 +191,11 @@ const styles = StyleSheet.create({
       marginBottom: 20,
     },
     input: {
-      borderWidth: 1,
-      borderColor: "#ccc",
-      borderRadius: 8,
-      padding: 10,
-      marginBottom: 10,
-       color: "#000"
+     
+     
     },
     button: {
-      backgroundColor: "#007bff",
+ 
       padding: 15,
       borderRadius: 8,
       alignItems: "center",
@@ -179,5 +206,22 @@ const styles = StyleSheet.create({
       fontSize: 16,
       fontWeight: "bold",
     },
+    containerSignUP:{
+     
+      backgroundColor: "#F0F8FF",
+      borderRadius: 50,
+      marginVertical:15,
+      marginHorizontal: 10,
+      paddingHorizontal: 20,
+      borderColor: 'black',  
+      borderWidth: 0.1, 
+      paddingVertical:20,
+    },
+    InputLabel:{
+      fontSize: 16,
+      color: 'black',
+      marginTop: 5,
+      marginBottom: 0,
+    }
   });
 export default SignUp
