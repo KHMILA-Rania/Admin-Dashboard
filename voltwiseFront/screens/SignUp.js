@@ -49,7 +49,7 @@ function SignUp(){
           };
     
           // Make the API request to register the user
-          const response = await axios.post('http://192.168.1.177:3000/auth/register', userData);
+          const response = await axios.post(`http://${GLOBALS.IP}:3000/auth/register`, userData);
     
           // Check the response and handle accordingly
           if (response.status === 200) {

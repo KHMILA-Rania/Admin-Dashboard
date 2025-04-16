@@ -83,12 +83,7 @@ const Home = () => {
           <View style={styles.header}>
 
             {/* Back Button*/}
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-              <Image
-                source={require('../assets/icons/back-icon.png')} 
-                style={styles.backIcon}
-              />
-            </TouchableOpacity>
+         
 
           </View>
 
@@ -172,6 +167,9 @@ const Home = () => {
           <TouchableOpacity onPress={() => navigation.navigate('SignUp')} style={styles.loginButton}>
             <Text style={styles.loginText}>Sign Up</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('SignIn')} style={styles.loginButton}>
+            <Text style={styles.loginText}>Login</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -189,11 +187,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginVertical:5
   },
-  backIcon: {
-    width: 24,
-    height: 24,
-    resizeMode: 'contain',
-  },
+ 
   container: {
     flex: 1,
     flexDirection: 'row', 

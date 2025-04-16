@@ -1,16 +1,42 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import mongoose  from 'mongoose';
+import mongoose, { Error }  from 'mongoose';
 import authRoutes from './routes/authRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
 import userRoutes from './routes/userRoutes.js'; 
+import partnerRoutes from './routes/partnerRoutes.js'
+import complaintRoutes from './routes/complaintRoutes.js';
+
+
 import nodemailer from 'nodemailer';
 import cors from 'cors';
 dotenv.config();
 const app = express();
+
+const allowedOrigins=['http://172.16.130.117:3000','http://localhost:3001']
+
 app.use(cors({
-  origin:  'http://192.168.137.137:3000'
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
 }));
+app.options('*', cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+}));
+
+
 app.use(express.json());
 
 
@@ -37,6 +63,12 @@ app.use('/role',roleRoutes);
 
 //user routes
 app.use('/user',userRoutes);
+
+//complaint routes
+app.use('/complaint',complaintRoutes);
+
+//partner routes
+app.use('/partner',partnerRoutes)
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

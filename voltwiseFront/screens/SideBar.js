@@ -6,11 +6,15 @@ const Sidebar = ({ navigation }) => {
   return (
     <View style={styles.sidebarContainer}>
       <Text style={styles.title}></Text>
+  
+      <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AboutUs')}>
+        <Text style={styles.menuText}>About Us</Text>
+      </TouchableOpacity>
       <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Sign-Up')}>
         <Text style={styles.menuText}>Contact Info</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Sign-Up')}>
-        <Text style={styles.menuText}>About Us</Text>
+        <Text style={styles.menuText}>Complaint</Text>
       </TouchableOpacity>
     </View>
   );

@@ -7,8 +7,11 @@ import Home from '../screens/Home';
 import SignIn from '../screens/SignIn';
 import SignUp from '../screens/SignUp';
 import ResetPassword from '../screens/ResetPassword';
-import UpdateProfile from '../screens/profileUser/UpdateProfile'
+import UpdateProfile from '../screens/user/UpdateProfile'
 import SplashScreen from '../screens/SplashScreen';
+import HomeUser from '../screens/user/HomeUser';
+import AboutUs from '../screens/about';
+import Complaint from '../screens/Complaint';
 const Stack = createNativeStackNavigator();
 
 
@@ -22,7 +25,9 @@ export default function AppNavigator (){
           <Stack.Screen name='ResetPassword' component={ResetPassword} />
           <Stack.Screen name='UpdateProfile' component={UpdateProfile} />
           <Stack.Screen name="Splash" component={SplashScreen} />
-
+          <Stack.Screen name="HomeUser" component={HomeUser} />
+          <Stack.Screen name="AboutUs" component={AboutUs} />
+          <Stack.Screen name="Complaint" component={Complaint} />
           </Stack.Navigator>
         </NavigationContainer>
       );

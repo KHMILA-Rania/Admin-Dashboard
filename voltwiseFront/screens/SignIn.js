@@ -15,55 +15,82 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import {useEffect, useState} from 'react';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Don't forget to import AsyncStorage
-
+import GLOBALS from '../global/variables';
 function SignIn({props}) {
+
   const navigation = useNavigation(); 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-const goHome=()=>{
-  navigation.navigate('Home');
-}
- 
-  function handleSubmit() {
-    console.log('Email:', email); // Debugging: Log email
-    console.log('Password:', password); // Debugging: Log password
-    const userData = {
-      email: email.trim(),
-      password: password.trim(),
-    };
-    console.log('UserData being sent:', userData);
-
-    // Send post request to login endpoint
-    axios
-      .post('http://192.168.1.177:3000/auth/login', userData)
-      .then(res => {
-        console.log('Response:', res); // Debugging: Log the response
-        console.log('Response Data:', res.data); // Debugging: Log the response
-        if (res.data.status === 'ok' || res.data.status === 200) {
-          console.log('Logged in successfully'); // Debugging: Log success
-          Alert.alert('Logged In Successfully');
-          AsyncStorage.setItem('token', res.data.data); // Store token
-          AsyncStorage.setItem('isLoggedIn', JSON.stringify(true)); // Store login state
-          AsyncStorage.setItem('userType', res.data.userType); // Store user type
-          console.log('Token stored:', res.data.data); // Debugging: Log token stored
-          console.log('User type stored:', res.data.userType); // Debugging: Log user type stored
-          
-          // Log the navigation object to check if it's working
-          console.log('Navigation object:', navigation);
-
-          // Navigate to Home screen after successful login
-          navigation.navigate('Home');
-        } else {
-          console.log('Login failed'); // Debugging: Log failure
-          Alert.alert('Login failed. Please check your credentials.');
-        }
-      })
-      .catch(err => {
-        console.error('Error during login:', err); // Debugging: Log any errors
-        Alert.alert('An error occurred during login. Please try again.');
-      });
+  const goHome=()=>{
+    navigation.navigate('Home');
   }
+
+  useEffect(() => {
+    checkLoginStatus();
+  }, []);
+
+
+
+  async function checkLoginStatus() {
+    const isLoggedIn = await AsyncStorage.getItem('isLoggedIn');
+    if (isLoggedIn === 'true') {
+      navigation.navigate('HomeUser');
+    }
+  }
+
+  
+
+  const HandleSubmit = async () => {
+    try {
+      console.log('Email:', email);
+      console.log('Password:', password);
+  
+      const userData = {
+        email: email.trim(),
+        password: password.trim(),
+      };
+  
+      const res = await axios.post(`http://${GLOBALS.IP}:3000/auth/login`, userData);
+      console.log('Response Data:', res.data);
+  
+      if (res.data.status === 'ok' || res.data.status === 200) {
+        console.log('Logged in successfully');
+        Alert.alert('Logged In Successfully');
+  
+        // Ensure token is a string
+        await AsyncStorage.setItem('token', JSON.stringify(res.data.data));
+        await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
+  
+        // Extract userType from role array
+        const userType = res.data.data.role?.[0]?.name; // Safe access
+        if (userType) {
+          await AsyncStorage.setItem('userType', userType);
+          console.log('User type stored:', userType);
+        } else {
+          console.warn('User role is missing in response.');
+        }
+  
+        console.log('Token stored:', res.data.data);
+  
+        // Navigate after AsyncStorage is updated
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'HomeUser' }],
+        });
+      } else {
+        console.log('Login failed');
+        Alert.alert('Login failed. Please check your credentials.');
+      }
+    } catch (err) {
+      console.error('Error during login:', err);
+      Alert.alert('An error occurred during login. Please try again.');
+    }
+  };
+  
+  
+
+  
 
   // Check if the user is logged in when the component mounts
   async function getData() {
@@ -124,12 +151,12 @@ const goHome=()=>{
           </View>
         </View>
         <View style={style.button}>
-          <TouchableOpacity style={style.inBut} onPress={handleSubmit}>
+          <TouchableOpacity style={style.inBut} onPress={HandleSubmit}>
             <View>
               <Text style={style.textSign}>Log in</Text>
             </View>
           </TouchableOpacity>
-
+       
           <View style={{padding: 15}}>
             <Text style={{fontSize: 14, fontWeight: 'bold', color: '#919191'}}>
               ----Or Continue as----

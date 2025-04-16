@@ -1,6 +1,11 @@
+import React, { useState, useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import SignIn from './screens/SignIn';
+import HomeUser from './screens/user/HomeUser';
 
 
-import React from 'react';
 import type {PropsWithChildren} from 'react';
 import {
   SafeAreaView,
@@ -8,18 +13,12 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
   View,
+  ActivityIndicator
+  
   
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
 import AppNavigator from './navigation/AppNavigator';
 
 type SectionProps = PropsWithChildren<{
@@ -29,6 +28,30 @@ type SectionProps = PropsWithChildren<{
 
 
 function App(): React.JSX.Element {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true); // <-- Add loading state
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const token = await AsyncStorage.getItem('token');
+      setIsLoggedIn(!!token);  // Set isLoggedIn based on token presence
+      setLoading(false);  // Set loading to false after the check
+    };
+
+    checkLoginStatus();
+  }, []);
+
+  if (loading) {
+ 
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#0000ff" />
+          <Text>Loading...</Text>
+        </View>
+      );
+    // You can show a loading screen if necessary
+  }
+
  
   return (
    
