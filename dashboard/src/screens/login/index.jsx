@@ -37,14 +37,15 @@ const AdminLogin = () => {
  
   return (
     <div className="admin-login-container">
+       
       {/* Centered Login Card */}
       <div className="admin-login-card">
         {/* Logo & Title (Centered) */}
         <div className="text-center">
           <img 
-            src="voltwise_solutions.jpg" 
+            src={require('./voltwiseBlack.png')} 
             alt="Logo" 
-            className="h-16 w-16 mx-auto mb-4" 
+            className="logo h-10 w-5 mx-auto mb-4" 
           />
           <h2 className="admin-login-title ">Admin Login</h2>
           <p className="admin-login-subtitle">Enter your credentials to continue</p>
@@ -75,7 +76,7 @@ const AdminLogin = () => {
             />
           </div>
 
-          {/* Login Button */}
+          {/*  Button */}
           <button
          
             type="submit"
