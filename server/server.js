@@ -6,7 +6,7 @@ import roleRoutes from './routes/roleRoutes.js';
 import userRoutes from './routes/userRoutes.js'; 
 import partnerRoutes from './routes/partnerRoutes.js'
 import complaintRoutes from './routes/complaintRoutes.js';
-
+import stationRoutes from './routes/stationRoutes.js'
 
 import nodemailer from 'nodemailer';
 import cors from 'cors';
@@ -68,7 +68,10 @@ app.use('/user',userRoutes);
 app.use('/complaint',complaintRoutes);
 
 //partner routes
-app.use('/partner',partnerRoutes)
+app.use('/partner',partnerRoutes);
+
+//station routes
+app.use("/station",stationRoutes)
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
