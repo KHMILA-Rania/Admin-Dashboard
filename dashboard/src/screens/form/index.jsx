@@ -4,9 +4,14 @@ import * as yup from "yup";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import Header from "../../components/Header";
 import axios from "axios";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const Form = () => {
   const isNonMobile = useMediaQuery("(min-width:600px)");
+  const navigate = useNavigate();
 
   const handleSubmit = async (values, { resetForm }) => {
     try {
@@ -20,11 +25,17 @@ const Form = () => {
       });
 
       console.log("Partner created:", response.data);
-      alert("Partner created successfully!");
+      toast.success("✅ Partner created successfully!");
       resetForm();
+
+
+      setTimeout(() => {
+        navigate("/dashboard/contacts"); // <-- change to your list route
+      }, 2000);
     } catch (error) {
       console.error("Error creating partner:", error);
-      alert("Failed to create partner. Please try again.");
+
+      toast.error("❌ Failed to create partner. Please try again.");
     }
   };
 
@@ -149,6 +160,7 @@ const Form = () => {
           </form>
         )}
       </Formik>
+      <ToastContainer />
     </Box>
   );
 };
