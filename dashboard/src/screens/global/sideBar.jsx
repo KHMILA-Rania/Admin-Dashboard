@@ -163,7 +163,7 @@ const SideBar = () => {
             <Typography
             variant="h6" color={colors.grey[500]}
             sx={{m:"15px 0 5px 20px"}}
-            >Data</Typography>
+            >Users Data</Typography>
              <Item
              className="sideText"
                 title="List of users"
@@ -180,23 +180,25 @@ const SideBar = () => {
                 setSelected={setSelected}
             ></Item>
              <Item
-                title="Invoices Balances"
-                to='/dashboard/invoices'
-                icon={<ReceiptOutlinedIcon></ReceiptOutlinedIcon>}
-                selected={selected}
-                setSelected={setSelected}
-            ></Item>
-                     <Typography
-            variant="h6" color={colors.grey[500]}
-            sx={{m:"15px 0 5px 20px"}}
-            >Pages</Typography>
-             <Item
                 title="Create Partner Form"
                 to='/dashboard/form'
                 icon={<PersonOutlinedIcon></PersonOutlinedIcon>}
                 selected={selected}
                 setSelected={setSelected}
             ></Item>
+            
+                     <Typography
+            variant="h6" color={colors.grey[500]}
+            sx={{m:"15px 0 5px 20px"}}
+            >Stations and complaints</Typography>
+             <Item
+                title="Stations"
+                to='/dashboard/invoices'
+                icon={<ReceiptOutlinedIcon></ReceiptOutlinedIcon>}
+                selected={selected}
+                setSelected={setSelected}
+            ></Item>
+            
              <Item
                 title="Calendar"
                 to='/dashboard/calendar'
