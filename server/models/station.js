@@ -27,6 +27,11 @@ const stationSchema=new mongoose.Schema({
         ref: "Partner", // this assumes your partner model is named 'Partner'
         required: true,
       },
+      image: {
+        type: String,
+        required: false, 
+        default:"https://img.freepik.com/premium-vector/electrical-charging-station-icon_617585-1878.jpg?w=740"
+      },
 
     createdAt: {
         type: Date,

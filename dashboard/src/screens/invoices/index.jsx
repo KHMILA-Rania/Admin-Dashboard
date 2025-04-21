@@ -299,6 +299,7 @@ const Invoices = () => {
       const res = await axios.get("http://localhost:3000/station/");
       const formatted = res.data.map((s) => ({
         id: s._id,
+        image:s.image,
         name: s.name,
         plugType: s.plugType,
         location: s.location,
@@ -340,6 +341,14 @@ const Invoices = () => {
   const handleCloseAdd = () => setOpenAddModal(false);
 
   const columns = [
+    {field:"image",headerName:'image',
+      renderCell:(params)=>{
+        return (
+        <img src={`http://localhost:3000${params.value}`} 
+         style={{ width: 30, height: 30, objectFit: "cover", borderRadius: "8px" }} ></img>
+        )
+      }
+    },
 
     { field: "name", headerName: "Name", flex: 1 },
     { field: "plugType", headerName: "Plug Type", flex: 1 },

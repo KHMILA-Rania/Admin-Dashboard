@@ -19,11 +19,14 @@ const addStation=async (req, res)=>{
             state,
             plugType,
             chargingTime,
-            kilowatt
+            kilowatt,
+            image: req.file ? `/uploads/${req.file.filename}` : null,
 
         });
-        await newStation.save();
-        res.status(201).json({message: "station created successfully"})
+        await newStation.save()
+        .then(station => res.status(201).json(station))
+        .catch(err => res.status(500).json({ message: err.message }));
+
     }
     catch(error){
 

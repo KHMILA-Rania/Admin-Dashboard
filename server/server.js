@@ -7,11 +7,17 @@ import userRoutes from './routes/userRoutes.js';
 import partnerRoutes from './routes/partnerRoutes.js'
 import complaintRoutes from './routes/complaintRoutes.js';
 import stationRoutes from './routes/stationRoutes.js'
-
+import path from 'path';
+import { fileURLToPath } from 'url';
 import nodemailer from 'nodemailer';
 import cors from 'cors';
 dotenv.config();
 const app = express();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// Serve /uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const allowedOrigins=['http://172.16.130.117:3000','http://localhost:3001']
 
