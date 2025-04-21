@@ -5,39 +5,256 @@ import Header from "../../components/Header";
 import { tokens } from "../../theme";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import axios from "axios";
+import { Snackbar, Alert } from "@mui/material";
 
 // Enum values for state
 const stateOptions = ["active", "inactive", "Under Maintenance"];
 
+
+
 const RowActions = ({ refreshData, row }) => {
   const [anchorEl, setAnchorEl] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [toastOpen, setToastOpen] = useState(false);
+
+  const [updateOpen, setUpdateOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastSeverity, setToastSeverity] = useState("success");
+  const [partners, setPartners] = useState([]);
+  const [formData, setFormData] = useState({
+    name: row.name || "",
+    location: row.location || "",
+    plugType:row.plugType || "",
+    state: row.state || "N/A",
+    kilowatt:row.kilowatt,
+    capacity:row.capacity,
+    chargingTime:row.chargingTime,
+    marque:row.marque,
+    owner:row.owner
+
+  });
+
+
+  const fetchPartners = async () => {
+    try {
+      const res = await axios.get("http://localhost:3000/partner/");
+      if (res?.data?.partners) {
+        setPartners(res.data.partners);
+      } else {
+        console.error("No partners found in response");
+      }
+    } catch (error) {
+      console.error("Error fetching partners:", error);
+    }
+  };
+  useEffect(() => {
+    fetchPartners();
+  }, []);
   const open = Boolean(anchorEl);
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleClose = () => {
+  const handleCloseMenu = () => {
     setAnchorEl(null);
   };
 
+  const handleDeleteClick = () => {
+    setConfirmOpen(true);
+    handleCloseMenu();
+  };
+
+  const handleConfirmClose = () => {
+    setConfirmOpen(false);
+  };
+
+  const handleToastClose = () => {
+    setToastOpen(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await axios.delete(`http://localhost:3000/station/${row.id}`);
+      refreshData(); // Refresh list
+      setToastOpen(true); // Show success toast
+    } catch (error) {
+      console.error("Error deleting station:", error);
+    } finally {
+      setConfirmOpen(false);
+    }
+  };
+
+  const handleUpdateClick = () => {
+    setUpdateOpen(true);
+    handleCloseMenu();
+  };
+
+
+
+  const handleUpdateSubmit = async () => {
+    try {
+      await axios.put(`http://localhost:3000/station/${row.id}`, formData);
+      refreshData();
+      setToastMessage("Station updated successfully!");
+      setToastSeverity("success");
+      setUpdateOpen(false);
+    } catch (error) {
+      console.error("Update error:", error);
+      setToastMessage("Error updating station.");
+      setToastSeverity("error");
+    } finally {
+      setToastOpen(true);
+    }
+  };
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+
   return (
-    <div>
+    <>
       <IconButton onClick={handleClick}>
         <MoreVertIcon />
       </IconButton>
       <Menu
         anchorEl={anchorEl}
         open={open}
-        onClose={handleClose}
+        onClose={handleCloseMenu}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
       >
-        <MenuItem onClick={handleClose}>Update</MenuItem>
-        <MenuItem onClick={handleClose}>Delete</MenuItem>
+        <MenuItem onClick={handleUpdateClick}>Update</MenuItem>
+        <MenuItem onClick={handleDeleteClick}>Delete</MenuItem>
       </Menu>
-    </div>
+
+      {/* Confirm Delete Dialog */}
+      <Dialog open={confirmOpen} onClose={handleConfirmClose}>
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>Are you sure you want to delete this station?</DialogContent>
+        <DialogActions>
+          <Button onClick={handleConfirmClose}>Cancel</Button>
+          <Button onClick={handleConfirmDelete} color="error">Delete</Button>
+        </DialogActions>
+      </Dialog>
+
+
+
+      <Dialog open={updateOpen} onClose={() => setUpdateOpen(false)} fullWidth>
+        <DialogTitle>Update Station</DialogTitle>
+        <DialogContent>
+          <TextField
+            margin="dense"
+            label="Station Name"
+            name="name"
+            value={formData.name}
+            onChange={handleFormChange}
+            fullWidth
+          />
+          <TextField
+            margin="dense"
+            label="Location"
+            name="location"
+            value={formData.location}
+            onChange={handleFormChange}
+            fullWidth
+          />
+            <TextField
+            margin="dense"
+            label="capacity"
+            name="capacity"
+            value={formData.capacity}
+            onChange={handleFormChange}
+            fullWidth
+          />
+
+          <TextField
+            margin="dense"
+            label="plugType"
+            name="plugType"
+            value={formData.plugType}
+            onChange={handleFormChange}
+            fullWidth
+          />
+                    <FormControl fullWidth margin="dense">
+            <InputLabel>Owner</InputLabel>
+            <Select
+              name="owner"
+              value={formData.owner}
+              onChange={handleFormChange}
+              label="Owner"
+            >
+              {partners.map((partner) => (
+                <MenuItem key={partner._id} value={partner._id}>
+                  {partner.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+           <TextField
+            margin="dense"
+            label="chargingTime"
+            name="chargingTime"
+            value={formData.chargingTime}
+            onChange={handleFormChange}
+            fullWidth
+          />
+           <TextField
+            margin="dense"
+            label="kilowatt"
+            name="kilowatt"
+            value={formData.kilowatt}
+            onChange={handleFormChange}
+            fullWidth
+          />
+           <TextField
+            margin="dense"
+            label="marque"
+            name="marque"
+            value={formData.marque}
+            onChange={handleFormChange}
+            fullWidth
+          />
+          <FormControl fullWidth margin="dense">
+  <InputLabel>State</InputLabel>
+  <Select
+    name="state"
+    value={formData.state}
+    onChange={handleFormChange}
+    label="State"
+  >
+    {stateOptions.map((option) => (
+      <MenuItem key={option} value={option}>
+        {option}
+      </MenuItem>
+    ))}
+  </Select>
+  </FormControl>
+
+          {/* Add more fields if needed */}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUpdateOpen(false)}>Cancel</Button>
+          <Button onClick={handleUpdateSubmit} color="primary">Save</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Toast Notification */}
+      <Snackbar
+        open={toastOpen}
+        autoHideDuration={3000}
+        onClose={handleToastClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert onClose={handleToastClose} severity="success" sx={{ width: "100%" }}>
+          Station deleted successfully!
+        </Alert>
+      </Snackbar>
+    </>
   );
 };
+
 
 const Invoices = () => {
   const theme = useTheme();
@@ -123,7 +340,7 @@ const Invoices = () => {
   const handleCloseAdd = () => setOpenAddModal(false);
 
   const columns = [
-    { field: "id", headerName: "ID", flex: 1 },
+
     { field: "name", headerName: "Name", flex: 1 },
     { field: "plugType", headerName: "Plug Type", flex: 1 },
     { field: "location", headerName: "Location", flex: 1 },
