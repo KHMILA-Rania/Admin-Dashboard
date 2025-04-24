@@ -84,6 +84,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+         manifestPlaceholders = [
+      googleMapsApiKey: "AIzaSyDyja1S38UVttpXo_BkIs5TZGorwnIBH0s"
+    ]
     }
     signingConfigs {
         debug {

@@ -19,7 +19,7 @@ const __dirname = path.dirname(__filename);
 // Serve /uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-const allowedOrigins=['http://172.16.130.117:3000','http://localhost:3001']
+const allowedOrigins=['http://102.25.110.228:3000','http://localhost:3001']
 
 app.use(cors({
   origin: function (origin, callback) {
