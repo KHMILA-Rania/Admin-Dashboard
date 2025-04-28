@@ -12,6 +12,7 @@ import SplashScreen from '../screens/SplashScreen';
 import HomeUser from '../screens/user/HomeUser';
 import AboutUs from '../screens/about';
 import Complaint from '../screens/Complaint';
+import CustomBottomBar from '../screens/user/customBottomBar';
 const Stack = createNativeStackNavigator();
 
 
@@ -28,6 +29,7 @@ export default function AppNavigator (){
           <Stack.Screen name="HomeUser" component={HomeUser} />
           <Stack.Screen name="AboutUs" component={AboutUs} />
           <Stack.Screen name="Complaint" component={Complaint} />
+          <Stack.Screen name="customBottomBar" component={CustomBottomBar} />
           </Stack.Navigator>
         </NavigationContainer>
       );
