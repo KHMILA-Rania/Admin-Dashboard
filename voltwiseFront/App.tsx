@@ -4,7 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SignIn from './screens/SignIn';
 import HomeUser from './screens/user/HomeUser';
-
+import { AuthProvider } from './context/AuthContext';
 
 import type {PropsWithChildren} from 'react';
 import {
@@ -54,11 +54,12 @@ function App(): React.JSX.Element {
 
  
   return (
-   
+    <AuthProvider>
       <SafeAreaView style={{ flex: 1 }}>
       <StatusBar barStyle="dark-content" />
       <AppNavigator />
     </SafeAreaView>
+    </AuthProvider>
   );
 }
 

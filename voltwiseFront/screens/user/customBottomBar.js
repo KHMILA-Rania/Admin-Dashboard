@@ -10,17 +10,17 @@ const CustomBottomBar = memo(() => {
 
   return (
     <View style={styles.container}>
-        <Text>hello </Text>
+       
       <TouchableOpacity
         style={styles.tab}
-        onPress={() => navigation.navigate('Home')}
+        onPress={() => navigation.navigate('HomeUser')}
       >
         <Text style={styles.tabText}>Home</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.tab}
-        onPress={() => navigation.navigate('Profile')}
+        onPress={() => navigation.navigate('userProfile')}
       >
         <Text style={styles.tabText}>Profile</Text>
       </TouchableOpacity>
@@ -29,7 +29,7 @@ const CustomBottomBar = memo(() => {
         style={styles.tab}
         onPress={() => navigation.navigate('Settings')}
       >
-        <Text style={styles.tabText}>Settings</Text>
+        <Text style={styles.tabText}  onPress={() => navigation.navigate('Complaint')}>Complaint</Text>
       </TouchableOpacity>
     </View>
   );
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around', // Space tabs evenly
     alignItems: 'center', // Center items vertically
     height: 60, // Height of the bottom bar
-    backgroundColor: '#ffffff', // Background color of the bar
+    backgroundColor: '#223958', // Background color of the bar
     borderTopWidth: 1, // Add a border at the top
     borderTopColor: '#ddd', // Border color
     position: 'absolute', // Fix it to the bottom
@@ -55,7 +55,8 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: 16,
-    color: '#2D9CDB',
+    fontWeight: 'bold',
+    color: 'white',
   },
 });
 

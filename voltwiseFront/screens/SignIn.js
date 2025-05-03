@@ -43,8 +43,7 @@ function SignIn({props}) {
 
   const HandleSubmit = async () => {
     try {
-      console.log('Email:', email);
-      console.log('Password:', password);
+      
   
       const userData = {
         email: email.trim(),
@@ -61,7 +60,9 @@ function SignIn({props}) {
         // Ensure token is a string
         await AsyncStorage.setItem('token', JSON.stringify(res.data.data));
         await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
-  
+        const userId = res.data.data._id;
+        console.log('User ID:', userId);
+        await AsyncStorage.setItem('userId', userId); 
         // Extract userType from role array
         const userType = res.data.data.role?.[0]?.name; // Safe access
         if (userType) {
@@ -71,7 +72,7 @@ function SignIn({props}) {
           console.warn('User role is missing in response.');
         }
   
-        console.log('Token stored:', res.data.data);
+       
   
         // Navigate after AsyncStorage is updated
         navigation.reset({
