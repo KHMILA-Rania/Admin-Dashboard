@@ -14,6 +14,7 @@ import AboutUs from '../screens/about';
 import Complaint from '../screens/Complaint';
 import CustomBottomBar from '../screens/user/customBottomBar';
 import UserProfile from '../screens/user/userProfile';
+import ComplaintsList from '../screens/user/ComplaintsList';
 const Stack = createNativeStackNavigator();
 
 
@@ -32,6 +33,7 @@ export default function AppNavigator (){
           <Stack.Screen name="Complaint" component={Complaint} />
           <Stack.Screen name="customBottomBar" component={CustomBottomBar} />
           <Stack.Screen name="userProfile" component={UserProfile} />
+          <Stack.Screen name="ComplaintsList" component={ComplaintsList} />
           </Stack.Navigator>
         </NavigationContainer>
       );

@@ -7,9 +7,11 @@ import CustomBottomBar from './customBottomBar';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../../context/AuthContext';
+
 const { height } = Dimensions.get('window');
 
 const HomeUser = ({ navigation }) => {
+ 
   const [userType, setUserType] = useState('user');
   const [userName, setUserName] = useState('User');
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -314,8 +316,7 @@ const darkMapStyle = [
 
         <View style={styles.titles}>
         <Text style={styles.title}>Welcome, {userName}!</Text>
-        <Text style={styles.title}>your is , {userID}!</Text>
-        <Text style={styles.subtitle}>You are logged in as: {userType}</Text>
+       
         </View>
 
 

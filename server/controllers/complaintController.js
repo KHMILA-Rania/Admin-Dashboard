@@ -1,34 +1,72 @@
 import  Complaint from '../models/complaint.js';
 import mongoose from 'mongoose'; // Make sure mongoose is imported
+import User from '../models/user.js';
+const CreateComplaint = async (req, res) => {
+    try {
+        const { userId, subject, description } = req.body;
 
-const CreateComplaint=async(req, res)=>{
-    try{
-        const {userId , subject , description}=req.body;
-        const validUserId = mongoose.Types.ObjectId.isValid(userId)
-            ? mongoose.Types.ObjectId(userId)
-            : null;
+        // Debugging the userId being passed
+        console.log('User ID from request:', userId);  // Log it to see its format
 
-            if (!validUserId) {
-                return res.status(400).json({ message: 'Invalid user ID' });
-            }
-    
-            if (!mongoose.Types.ObjectId.isValid(userId)) {
-                return res.status(400).json({ message: 'Invalid user ID format' });
-            }
+        // Make sure userId is a valid ObjectId
+        const validUserId = mongoose.Types.ObjectId.isValid(userId) ? userId : null;
 
-            const user = await User.findById(userId);
-            if (!user) {
-                return res.status(404).json({ message: 'User not found' });
-            }
-            
-        const newComplaint=new Complaint({userId, subject, description});
+        if (!validUserId) {
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
+
+        // Log userId as ObjectId before query
+        console.log('Searching for user with ID:', validUserId);
+
+        // Fetch the user from the database using the correct format
+        const user = await User.findById(validUserId);  // Use validUserId directly
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Create the new complaint
+        const newComplaint = new Complaint({
+            userId: validUserId,
+            subject,
+            description,
+        });
+
         await newComplaint.save();
-        res.status(200).json({message:'complaint submitted', Complaint: newComplaint});
-    }
-    catch (err) {
-        res.status(500).json({message: err.message, Complaint: err.message});
+        res.status(200).json({ message: 'Complaint submitted', Complaint: newComplaint });
+    } catch (err) {
+        console.error('Error:', err);  // Add this to log any error
+        res.status(500).json({ message: err.message });
     }
 };
+
+
+// Get complaints for a specific user
+const getComplaintsByUser = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+
+        // Validate userId format
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
+
+        // Fetch complaints for this user
+        const complaints = await Complaint.find({ userId: userId });
+
+        if (!complaints.length) {
+            return res.status(404).json({ message: 'No complaints found for this user' });
+        }
+
+        res.status(200).json({ complaints });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: err.message });
+    }
+};
+
+
+
 
 
 const deleteComplaint = async (req, res) => {
@@ -65,6 +103,7 @@ export{
     CreateComplaint,
     deleteComplaint,
     getComplaintById,
-    getAllComplaints
+    getAllComplaints,
+    getComplaintsByUser
 
 }

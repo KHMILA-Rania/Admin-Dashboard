@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,6 +12,16 @@ const UserProfile = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    adress: '',
+    phoneNumber: '',
+    age: '',
+    vehicleType: '',
+    plugType: '',
+  });
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -39,6 +49,15 @@ const UserProfile = () => {
       try {
         const response = await axios.get(`http://${GLOBALS.IP}:3000/user/${userId}`);
         setUser(response.data.user);
+        setFormData({
+          name: response.data.user.name || '',
+          email: response.data.user.email || '',
+          adress: response.data.user.adress || '',
+          phoneNumber: response.data.user.phoneNumber || '',
+          age: response.data.user.age ? response.data.user.age.toString() : '',
+          vehicleType: response.data.user.vehicleType || '',
+          plugType: response.data.user.plugType || '',
+        });
       } catch (err) {
         setError('Failed to fetch user data');
       } finally {
@@ -49,6 +68,10 @@ const UserProfile = () => {
     getUserData();
   }, [userId]);
 
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   const handleGoBack = () => {
     navigation.goBack();
   };
@@ -56,6 +79,17 @@ const UserProfile = () => {
   const handleLogout = async () => {
     await AsyncStorage.removeItem('userId');
     navigation.navigate('Login');
+  };
+
+  const handleUpdate = async () => {
+    try {
+      const response = await axios.patch(`http://${GLOBALS.IP}:3000/user/${userId}`, formData);
+      setUser(response.data.updatedUser);
+      setIsEditing(false);
+      Alert.alert('Success', 'Profile updated successfully!');
+    } catch (err) {
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
+    }
   };
 
   if (isLoading) {
@@ -87,7 +121,7 @@ const UserProfile = () => {
         <Image
           source={{
             uri:
-              user.profileImageUrl ||
+           
               'https://static.vecteezy.com/system/resources/thumbnails/000/439/863/small_2x/Basic_Ui__28186_29.jpg',
           }}
           style={styles.profileImage}
@@ -97,17 +131,59 @@ const UserProfile = () => {
       </View>
 
       <View style={styles.infoSection}>
-        <InfoRow label="ID" value={userId || 'Not Available'} />
-        <InfoRow label="Name" value={user.name || 'Not Available'} />
-        <InfoRow label="Email" value={user.email || 'Not Available'} />
-        {/* ⚠ Never display passwords */}
-        <InfoRow label="Address" value={user.adress || 'Not Available'} />
-        <InfoRow label="Phone Number" value={user.phoneNumber || 'Not Available'} />
-        <InfoRow label="Age" value={user.age ? `${user.age} years` : 'Not Available'} />
-        <InfoRow label="Vehicle Type" value={user.vehicleType || 'Not Available'} />
-        <InfoRow label="Plug Type" value={user.plugType || 'Not Available'} />
-        
+        <EditableRow
+          label="Name"
+          value={formData.name}
+          editable={isEditing}
+          onChangeText={value => handleInputChange('name', value)}
+        />
+        <EditableRow
+          label="Email"
+          value={formData.email}
+          editable={isEditing}
+          onChangeText={value => handleInputChange('email', value)}
+        />
+        <EditableRow
+          label="Address"
+          value={formData.adress}
+          editable={isEditing}
+          onChangeText={value => handleInputChange('adress', value)}
+        />
+        <EditableRow
+          label="Phone Number"
+          value={formData.phoneNumber}
+          editable={isEditing}
+          onChangeText={value => handleInputChange('phoneNumber', value)}
+        />
+        <EditableRow
+          label="Age"
+          value={formData.age}
+          editable={isEditing}
+          onChangeText={value => handleInputChange('age', value)}
+        />
+        <EditableRow
+          label="Vehicle Type"
+          value={formData.vehicleType}
+          editable={isEditing}
+          onChangeText={value => handleInputChange('vehicleType', value)}
+        />
+        <EditableRow
+          label="Plug Type"
+          value={formData.plugType}
+          editable={isEditing}
+          onChangeText={value => handleInputChange('plugType', value)}
+        />
       </View>
+
+      {isEditing ? (
+        <TouchableOpacity onPress={handleUpdate} style={styles.saveButton}>
+          <Text style={styles.saveText}>Save</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity onPress={() => setIsEditing(true)} style={styles.editButton}>
+          <Text style={styles.editText}>Edit Profile</Text>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
         <Text style={styles.logoutText}>Logout</Text>
@@ -116,10 +192,19 @@ const UserProfile = () => {
   );
 };
 
-const InfoRow = ({ label, value }) => (
+const EditableRow = ({ label, value, editable, onChangeText }) => (
   <View style={styles.detailRow}>
     <Text style={styles.detailLabel}>{label}</Text>
-    <Text style={styles.detailValue}>{value}</Text>
+    {editable ? (
+      <TextInput
+        style={styles.inputField}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={`Enter ${label}`}
+      />
+    ) : (
+      <Text style={styles.detailValue}>{value || 'Not Available'}</Text>
+    )}
   </View>
 );
 
@@ -195,6 +280,13 @@ const styles = StyleSheet.create({
     color: '#333',
     fontWeight: '500',
   },
+  inputField: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    padding: 8,
+    borderRadius: 5,
+    backgroundColor: '#fff',
+  },
   backButton: {
     position: 'absolute',
     top: 20,
@@ -209,10 +301,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
+  editButton: {
+    marginTop: 20,
+    padding: 12,
+    backgroundColor: '#39B2DB',
+    borderRadius: 5,
+    alignItems: 'center',
+    marginHorizontal: 30,
+  },
+  editText: {
+    color: '#fff',
+    fontSize: 16,
+  },
+  saveButton: {
+    marginTop: 20,
+    padding: 12,
+    backgroundColor: '#388e3c',
+    borderRadius: 5,
+    alignItems: 'center',
+    marginHorizontal: 30,
+  },
+  saveText: {
+    color: '#fff',
+    fontSize: 16,
+  },
   logoutButton: {
     marginTop: 20,
     padding: 12,
-    backgroundColor: '#f44336',
+    backgroundColor: '#223958',
     borderRadius: 5,
     alignItems: 'center',
     marginHorizontal: 30,

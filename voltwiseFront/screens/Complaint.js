@@ -1,27 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Button, Alert, StyleSheet , TouchableOpacity} from 'react-native';
 import AuthService from '../services/authService'; // Import your AuthService
 import GLOBALS from '../global/variables';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+
 
 const Complaint = () => {
+  const navigation=useNavigation();
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [userId, setUserId] = useState(null); // To store the user ID
   
-  // Fetch user ID only on mount
   useEffect(() => {
-    const fetchUser = async () => {
-      const { success, user } = await AuthService.getUserById(); // Make sure this call works
-      if (success && user) {
-        setUserId(user._id); // Assuming user._id is the correct user ID field
-      } else {
-        Alert.alert('Error', 'Unable to fetch user details.');
+    const fetchUserId = async () => {
+      try {
+        const storedUserId = await AsyncStorage.getItem('userId');
+        if (storedUserId) {
+          setUserId(storedUserId);
+        } else {
+          setError('User ID not found');
+          setIsLoading(false);
+        }
+      } catch (err) {
+        setError('Failed to fetch user ID');
+        setIsLoading(false);
       }
     };
-    fetchUser();
-  }, []); // Empty dependency array ensures this runs only once after mount
 
-  // Handle the form submission
+    fetchUserId();
+  }, []);
+
   const handleSubmit = async () => {
     if (!subject || !description) {
       Alert.alert('Error', 'Please fill in both subject and description.');
@@ -34,6 +43,7 @@ const Complaint = () => {
     }
 
     try {
+      console.log('before submiting complaint', { userId, subject, description });
       const response = await fetch(`http://${GLOBALS.IP}:3000/complaint/add`, {
         method: 'POST',
         headers: {
@@ -83,6 +93,11 @@ const Complaint = () => {
       />
       
       <Button title="Submit Complaint" onPress={handleSubmit} />
+
+      <TouchableOpacity onPress={() => navigation.navigate('ComplaintsList')}
+       style={{ marginTop: 20 }}>
+       <Text> complaints list</Text>
+      </TouchableOpacity>
     </View>
   );
 };
