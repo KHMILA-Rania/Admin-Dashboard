@@ -4,6 +4,7 @@ import AuthService from '../services/authService'; // Import your AuthService
 import GLOBALS from '../global/variables';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import style from './style';
 
 
 const Complaint = () => {
@@ -84,48 +85,89 @@ const Complaint = () => {
       
       <Text style={styles.label}>Description</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, styles.descriptionInput]}
         value={description}
         onChangeText={setDescription}
         placeholder="Enter the description"
         multiline
-        numberOfLines={4}
+        numberOfLines={7}
       />
       
-      <Button title="Submit Complaint" onPress={handleSubmit} />
+      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+  <Text style={styles.submitButtonText}>Submit Complaint</Text>
+</TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('ComplaintsList')}
-       style={{ marginTop: 20 }}>
-       <Text> complaints list</Text>
-      </TouchableOpacity>
+
+<TouchableOpacity style={styles.complaintsbtn} onPress={() => navigation.navigate('ComplaintsList')}>
+  <Text style={styles.complaintsLinkText}>Go to Complaints List</Text>
+</TouchableOpacity>
+
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
     flex: 1,
-    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: '#f2f4f7',
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 30,
     textAlign: 'center',
+    color: '#333',
   },
   label: {
     fontSize: 16,
-    marginBottom: 8,
+    marginBottom: 6,
+    color: '#555',
+    fontWeight: '600',
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
+    minHeight: 45,
+    borderColor: '#ccc',
     borderWidth: 1,
     marginBottom: 15,
-    paddingLeft: 10,
-    borderRadius: 5,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+  },
+  submitButton: {
+    backgroundColor: '#14939C',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  submitButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  complaintsLink: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  complaintsLinkText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  complaintsbtn:{
+    backgroundColor: '#568c89',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  descriptionInput: {
+    height: 120, 
+    textAlignVertical: 'top', 
   },
 });
+
+
 
 export default Complaint;

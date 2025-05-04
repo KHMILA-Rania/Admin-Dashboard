@@ -91,32 +91,41 @@ const ComplaintsList = () => {
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
         padding: 20,
+        backgroundColor: '#f2f4f7',
     },
     title: {
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: 'bold',
         marginBottom: 20,
+        textAlign: 'center',
+        color: '#14939C',
     },
     complaintItem: {
-        marginBottom: 15,
-        padding: 10,
-        backgroundColor: '#f9f9f9',
-        borderRadius: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.8,
-        shadowRadius: 2,
+        marginBottom: 16,
+        padding: 15,
+        backgroundColor: '#ffffff',
+        borderRadius: 7,
+        shadowColor: '#15AEFA',
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 4,
     },
     subject: {
         fontSize: 18,
-        fontWeight: '600',
+        fontWeight: '700',
+        marginBottom: 6,
+        color: '#14939C',
     },
     centered: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#f2f4f7',
     },
 });
+
 
 export default ComplaintsList;
