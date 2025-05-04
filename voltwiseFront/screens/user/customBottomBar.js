@@ -1,16 +1,14 @@
-// filepath: c:\voltwise\voltWiseApp\components\CustomBottomBar.js
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { memo } from 'react'; // Import memo for performance optimization
 
 const CustomBottomBar = memo(() => {
-    console.log('CustomBottomBar rendered'); // Debug log
+  console.log('CustomBottomBar rendered'); // Debug log
   const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
-       
       <TouchableOpacity
         style={styles.tab}
         onPress={() => navigation.navigate('HomeUser')}
@@ -27,16 +25,16 @@ const CustomBottomBar = memo(() => {
 
       <TouchableOpacity
         style={styles.tab}
-       
+        onPress={() => navigation.navigate('Complaint')}
       >
-        <Text style={styles.tabText}  onPress={() => navigation.navigate('Complaint')}>Complaint</Text>
+        <Text style={styles.tabText}>Complaint</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.tab}
-       
+        onPress={() => navigation.navigate('StationList')}
       >
-        <Text style={styles.tabText}  onPress={() => navigation.navigate('StationList')}>Stations</Text>
+        <Text style={styles.tabText}>Stations</Text>
       </TouchableOpacity>
     </View>
   );
@@ -53,7 +51,8 @@ const styles = StyleSheet.create({
     borderTopColor: '#ddd', // Border color
     position: 'absolute', // Fix it to the bottom
     bottom: 0, // Align to the bottom of the screen
-    width: '100%', // 
+    width: '100%', // Ensure it takes up full width
+    zIndex: 999, // Make sure it stays on top of other content
   },
   tab: {
     flex: 1,

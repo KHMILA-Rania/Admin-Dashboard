@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, Button, ScrollView, Alert } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, ScrollView, Alert } from 'react-native';
 import axios from 'axios';
 import GLOBALS from '../global/variables';
 import CustomBottomBar from './user/customBottomBar';
@@ -56,66 +56,71 @@ const StationList = () => {
     );
   }
 
-  
-    return (
-        <View style={{ flex: 1 }}>
-          <Text style={styles.listTitle}> Available Charging Stations</Text>
-          <FlatList
-            data={stations}
-            keyExtractor={(item) => item._id}
-            renderItem={renderItem}
-            contentContainerStyle={styles.list}
-          />
-      
-          {/* Modal for Details */}
-          <Modal
-            visible={modalVisible}
-            animationType="slide"
-            transparent={true}
-            onRequestClose={() => setModalVisible(false)}
-          >
-            <View style={styles.modalBackground}>
-              <View style={styles.modalBox}>
-                {selectedStation && (
-                  <ScrollView contentContainerStyle={styles.modalContent}>
-                    <Image source={{ uri: selectedStation.image }} style={styles.modalImage} />
-                    <Text style={styles.modalTitle}>{selectedStation.name}</Text>
-                    <View style={styles.detailContainer}>
-                      <Text style={styles.detailText}>📍 Location: {selectedStation.location}</Text>
-                      <Text style={styles.detailText}>🔌 Plug Type: {selectedStation.plugType}</Text>
-                      <Text style={styles.detailText}>⚡ Capacity: {selectedStation.capacity}</Text>
-                      <Text style={styles.detailText}>🛠️ State: {selectedStation.state}</Text>
-                      <Text style={styles.detailText}>⏱️ Charging Time: {selectedStation.chargingTime}</Text>
-                      <Text style={styles.detailText}>🔋 Kilowatt: {selectedStation.kilowatt} kW</Text>
-                      <Text style={styles.detailText}>🏷️ Marque: {selectedStation.marque}</Text>
-                    </View>
-      
-                    <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                      <Text style={styles.closeButtonText}>❌ Close</Text>
-                    </TouchableOpacity>
-                  </ScrollView>
-                )}
-              </View>
-            </View>
-          </Modal>
-          <CustomBottomBar></CustomBottomBar>
+  return (
+    <View style={styles.container}>
+      <Text style={styles.listTitle}>Available Charging Stations</Text>
+      <FlatList
+        data={stations}
+        keyExtractor={(item) => item._id}
+        renderItem={renderItem}
+        contentContainerStyle={styles.listContent}
+      />
+
+      {/* Modal with opaque background and content properly centered */}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalBox}>
+            {selectedStation && (
+              <ScrollView contentContainerStyle={styles.modalContent}>
+                <Image source={{ uri: selectedStation.image }} style={styles.modalImage} />
+                <Text style={styles.modalTitle}>{selectedStation.name}</Text>
+                <View style={styles.detailContainer}>
+                  <Text style={styles.detailText}>📍 Location: {selectedStation.location}</Text>
+                  <Text style={styles.detailText}>🔌 Plug Type: {selectedStation.plugType}</Text>
+                  <Text style={styles.detailText}>⚡ Capacity: {selectedStation.capacity}</Text>
+                  <Text style={styles.detailText}>🛠️ State: {selectedStation.state}</Text>
+                  <Text style={styles.detailText}>⏱️ Charging Time: {selectedStation.chargingTime}</Text>
+                  <Text style={styles.detailText}>🔋 Kilowatt: {selectedStation.kilowatt} kW</Text>
+                  <Text style={styles.detailText}>🏷️ Marque: {selectedStation.marque}</Text>
+                </View>
+
+                <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible(false)}>
+                  <Text style={styles.closeButtonText}>Close</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+          </View>
         </View>
-      );
-      
-  
+      </Modal>
+
+      {/* Fixed bottom bar */}
+      <CustomBottomBar />
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-  list: {
-    padding: 16,
+  container: {
+    flex: 1,
+    paddingTop: 20,
+    backgroundColor: '#f8f8f8',
   },
   listTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
     marginVertical: 16,
+    color: '#333',
   },
-  
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 80,
+  },
   card: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -125,7 +130,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
-    padding: 10,
+    padding: 16,
     alignItems: 'center',
   },
   image: {
@@ -141,6 +146,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: '#333',
   },
   location: {
     fontSize: 14,
@@ -158,6 +164,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 5,
     alignSelf: 'flex-start',
+    marginTop: 8,
   },
   buttonText: {
     color: '#fff',
@@ -174,7 +181,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)', // Semi-transparent background
   },
-  modalContainer: {
+  modalBox: {
     width: '85%', // Adjust modal width
     maxHeight: '80%', // Limit the height
     backgroundColor: 'white',
@@ -195,32 +202,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 10,
-  },
-  modalDetailRow: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-  modalLabel: {
-    fontSize: 16,
-    fontWeight: '600',
     color: '#333',
-  },
-  modalValue: {
-    fontSize: 16,
-    color: '#555',
-    marginLeft: 8,
-  },
-  closeBtn:{
-    backgroundColor: '#649ea2',
-  paddingVertical: 10,
-  paddingHorizontal: 20,
-  borderRadius: 20,
-  marginTop: 20,
-  },
-  closeButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
   detailContainer: {
     alignSelf: 'stretch',
@@ -230,8 +212,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 6,
     textAlign: 'left',
+    color: '#555',
   },
-  
+  closeBtn: {
+    backgroundColor: '#649ea2',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    marginTop: 20,
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
 
 export default StationList;
