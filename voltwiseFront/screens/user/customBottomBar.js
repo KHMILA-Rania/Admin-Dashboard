@@ -27,9 +27,16 @@ const CustomBottomBar = memo(() => {
 
       <TouchableOpacity
         style={styles.tab}
-        onPress={() => navigation.navigate('Settings')}
+       
       >
         <Text style={styles.tabText}  onPress={() => navigation.navigate('Complaint')}>Complaint</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.tab}
+       
+      >
+        <Text style={styles.tabText}  onPress={() => navigation.navigate('StationList')}>Stations</Text>
       </TouchableOpacity>
     </View>
   );

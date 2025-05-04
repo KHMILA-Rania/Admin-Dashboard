@@ -5,6 +5,7 @@ import GLOBALS from '../global/variables';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import style from './style';
+import CustomBottomBar from './user/customBottomBar';
 
 
 const Complaint = () => {
@@ -72,6 +73,7 @@ const Complaint = () => {
   };
 
   return (
+    <View style={{ flex: 1 }}>
     <View style={styles.container}>
       <Text style={styles.title}>Submit a Complaint</Text>
       
@@ -102,7 +104,13 @@ const Complaint = () => {
   <Text style={styles.complaintsLinkText}>Go to Complaints List</Text>
 </TouchableOpacity>
 
+
+
+     
     </View>
+    <CustomBottomBar />
+    </View> 
+   
   );
 };
 
