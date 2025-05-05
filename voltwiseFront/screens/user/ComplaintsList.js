@@ -38,7 +38,7 @@ const ComplaintsList = () => {
                 const response = await axios.get(`http://${GLOBALS.IP}:3000/complaint/user/${userId}`);
                 setComplaints(response.data.complaints);
             } catch (err) {
-                setError('Failed to load complaints');
+                setError('Failed to load complaints or no complaints found');
                 console.error(err);
             } finally {
                 setLoading(false);

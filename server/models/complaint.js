@@ -8,6 +8,7 @@ const complaintSchema = new Schema({
     ref: 'User', // Reference to the User model
     required: true,
   },
+  assignedPartnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Partner', default: null },
   subject: {
     type: String,
     required: true,

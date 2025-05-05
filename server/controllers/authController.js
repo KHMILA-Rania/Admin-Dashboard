@@ -29,7 +29,7 @@ const register=async (req,res)=>{
     const newUser=new User({
     name:req.body.name,
     email:req.body.email,
-    adress:req.body.adress,
+    address:req.body.address,
     age:req.body.age,
     vehicleType:req.body.vehicleType,
     plugType:req.body.plugType,

@@ -52,7 +52,7 @@ const UserProfile = () => {
         setFormData({
           name: response.data.user.name || '',
           email: response.data.user.email || '',
-          adress: response.data.user.adress || '',
+          address: response.data.user.address || '',
           phoneNumber: response.data.user.phoneNumber || '',
           age: response.data.user.age ? response.data.user.age.toString() : '',
           vehicleType: response.data.user.vehicleType || '',
@@ -126,7 +126,7 @@ const UserProfile = () => {
           }}
           style={styles.profileImage}
         />
-        <Text style={styles.statusText}>@ {user.name || 'Active'}</Text>
+        <Text style={styles.statusText}>@ {user?.name || 'Active'}</Text>
         <Text style={styles.arrow}>⌄</Text>
       </View>
 
@@ -145,7 +145,7 @@ const UserProfile = () => {
         />
         <EditableRow
           label="Address"
-          value={formData.adress}
+          value={formData.address}
           editable={isEditing}
           onChangeText={value => handleInputChange('adress', value)}
         />

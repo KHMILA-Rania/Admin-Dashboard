@@ -92,11 +92,32 @@ const getComplaintById = async (req, res) => {
 
 const getAllComplaints = async (req, res) => {
     try {
-        const complaints = await Complaint.find();
+        const complaints = await Complaint.find().populate('userId', 'name email'); // populate only name and email
         res.status(200).json(complaints);
-      } catch (error) {
+    } catch (error) {
         res.status(500).json({ error: 'Failed to fetch complaints', details: error.message });
-      }
+    }
+};
+
+
+const transferComplaintToPartner = async (req, res) => {
+    try {
+        const { complaintId } = req.params;
+        const { partnerId } = req.body;
+        
+        const complaint = await Complaint.findById(complaintId);
+        
+        if (!complaint) {
+            return res.status(404).json({ error: "Complaint not found" });
+        }
+
+        complaint.assignedPartnerId = partnerId; // Assign the partner
+        await complaint.save();
+        
+        res.status(200).json({ message: "Complaint transferred successfully", complaint });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to transfer complaint", details: error.message });
+    }
 };
 
 export{
@@ -104,6 +125,7 @@ export{
     deleteComplaint,
     getComplaintById,
     getAllComplaints,
-    getComplaintsByUser
+    getComplaintsByUser,
+    transferComplaintToPartner
 
 }
