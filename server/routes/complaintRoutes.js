@@ -2,7 +2,7 @@ import express from 'express';
 const router = express.Router();
 
 // Importing the complaint controller
-import { CreateComplaint, deleteComplaint, getComplaintById, getAllComplaints, getComplaintsByUser, transferComplaintToPartner }from '../controllers/complaintController.js';
+import { CreateComplaint, deleteComplaint, getComplaintsByPartner,getComplaintById, getAllComplaints, getComplaintsByUser, transferComplaintToPartner }from '../controllers/complaintController.js';
 
 // Route to add a new complaint
 router.post('/add', CreateComplaint);
@@ -19,5 +19,7 @@ router.get('/user/:userId', getComplaintsByUser);
 router.get('/', getAllComplaints);
 
 router.patch('/:complaintId/transfer', transferComplaintToPartner) 
+
+router.get('/complaints/by-partner', getComplaintsByPartner);
 
 export default router;

@@ -120,12 +120,49 @@ const transferComplaintToPartner = async (req, res) => {
     }
 };
 
+
+const getComplaintsByPartner = async (req, res) => {
+    try {
+        const complaintsByPartner = await Complaint.aggregate([
+            { $match: { assignedPartnerId: { $ne: null } } }, // Filter to only include complaints with an assigned partner
+            { 
+                $group: { 
+                    _id: "$assignedPartnerId", // Group by the assigned partner ID
+                    count: { $sum: 1 } // Count the number of complaints per partner
+                }
+            },
+            { 
+                $lookup: {
+                    from: "partners", // Join with the 'partners' collection
+                    localField: "_id", // Local field (assignedPartnerId)
+                    foreignField: "_id", // Foreign field in the 'partners' collection
+                    as: "partner" // Include partner details in the result
+                }
+            },
+            { $unwind: "$partner" }, // Flatten the partner details
+            { 
+                $project: {
+                    _id: 0, // Hide the original _id
+                    partnerName: "$partner.name", // Include partner name
+                    count: 1 // Include the count of complaints
+                }
+            }
+        ]);
+        
+        res.status(200).json(complaintsByPartner); // Return the result
+    } catch (error) {
+        console.error("Error fetching complaints by partner:", error);
+        res.status(500).send("Error fetching complaints by partner");
+    }
+};
+
 export{
     CreateComplaint,
     deleteComplaint,
     getComplaintById,
     getAllComplaints,
     getComplaintsByUser,
-    transferComplaintToPartner
+    transferComplaintToPartner,
+    getComplaintsByPartner
 
 }

@@ -198,7 +198,13 @@ const SideBar = () => {
                 selected={selected}
                 setSelected={setSelected}
             ></Item>
-            
+             <Item
+                title="Complaints"
+                to='/dashboard/faq'
+                icon={<HelpOutlineOutlinedIcon></HelpOutlineOutlinedIcon>}
+                selected={selected}
+                setSelected={setSelected}
+            ></Item>
              <Item
                 title="Calendar"
                 to='/dashboard/calendar'
@@ -206,13 +212,7 @@ const SideBar = () => {
                 selected={selected}
                 setSelected={setSelected}
             ></Item>
-             <Item
-                title="FAQ Page"
-                to='/dashboard/faq'
-                icon={<HelpOutlineOutlinedIcon></HelpOutlineOutlinedIcon>}
-                selected={selected}
-                setSelected={setSelected}
-            ></Item>
+            
                  <Typography
             variant="h6" color={colors.grey[500]}
             sx={{m:"15px 0 5px 20px"}}
