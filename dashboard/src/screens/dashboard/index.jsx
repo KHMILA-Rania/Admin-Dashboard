@@ -15,9 +15,52 @@ import ProgressCircle from "../../components/progressCircle";
 import SideBar from "../global/sideBar";
 import TopBar from "../global/topBar";
 import { Outlet } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+
+import axios from "axios";
 const Dashboard = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+const [userCount, setUserCount] = useState(0); 
+const [partnerCount, setPartnerCount] = useState(0);
+const [complaintCount, setComplaintCount] = useState(0);
+const [stationCount, setStationCount] = useState(0);
+const [adminUsers, setAdminUsers] = useState([]); 
+
+useEffect(() => {
+  const fetchCounts = async () => {
+      try {
+          const usersResponse = await axios.get('http://localhost:3000/user/getAll');
+          console.log(usersResponse)
+          setUserCount(usersResponse.data.users.length);
+          const allUsers = usersResponse.data.users;
+          const admins = allUsers.filter(user => 
+            user.role && 
+            Array.isArray(user.role) && 
+            user.role.length > 0 && 
+            user.role[0].name === 'admin'
+          );
+          setAdminUsers(admins);
+          console.log("Admin Users:", admins); 
+
+          const partnersResponse = await axios.get('http://localhost:3000/partner/');
+          setPartnerCount(partnersResponse.data.partners.length);
+
+          const complaintsResponse = await axios.get('http://localhost:3000/complaint/');
+        
+          setComplaintCount(complaintsResponse.data.length);
+
+          const stationCountResponse = await axios.get('http://localhost:3000/station/');
+          console.log(stationCountResponse)
+          setStationCount(stationCountResponse.data.length); // Update the station count
+      } catch (error) {
+          console.error('Error fetching counts:', error);
+      }
+  };
+
+  fetchCounts();
+}, []);
+
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -74,10 +117,10 @@ const Dashboard = () => {
               justifyContent="center"
             >
               <StatBox
-                title="12,361"
-                subtitle="Emails Sent"
+                title={complaintCount}
+                subtitle="complaints recieved"
                 progress="0.75"
-                increase="+14%"
+                increase=""
                 icon={
                   <EmailIcon sx={{ color: colors.greenAccent[600], fontSize: "26px" }} />
                 }
@@ -91,10 +134,10 @@ const Dashboard = () => {
               justifyContent="center"
             >
               <StatBox
-                title="431,225"
-                subtitle="Sales Obtained"
+                title={partnerCount}
+                subtitle="Number of Partners"
                 progress="0.50"
-                increase="+21%"
+                increase=""
                 icon={
                   <PointOfSaleIcon sx={{ color: colors.greenAccent[600], fontSize: "26px" }} />
                 }
@@ -108,10 +151,10 @@ const Dashboard = () => {
               justifyContent="center"
             >
               <StatBox
-                title="32,441"
-                subtitle="New Clients"
+                title={userCount}
+                subtitle="Total Clients"
                 progress="0.30"
-                increase="+5%"
+                increase=""
                 icon={
                   <PersonAddIcon sx={{ color: colors.greenAccent[600], fontSize: "26px" }} />
                 }
@@ -125,10 +168,10 @@ const Dashboard = () => {
               justifyContent="center"
             >
               <StatBox
-                title="1,325,134"
-                subtitle="Traffic Received"
+                title={stationCount}
+                subtitle="Stations"
                 progress="0.80"
-                increase="+43%"
+                increase=""
                 icon={
                   <TrafficIcon sx={{ color: colors.greenAccent[600], fontSize: "26px" }} />
                 }
@@ -181,30 +224,41 @@ const Dashboard = () => {
                 p="15px"
               >
                 <Typography color={colors.grey[100]} variant="h5" fontWeight="600">
-                  Recent Transactions
+                  Admin Users
                 </Typography>
               </Box>
-              {mockTransactions.map((transaction, i) => (
-                <Box
-                  key={`${transaction.txId}-${i}`}
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  borderBottom={`4px solid ${colors.primary[500]}`}
-                  p="15px"
-                >
-                  <Box>
-                    <Typography color={colors.greenAccent[500]} variant="h5" fontWeight="600">
-                      {transaction.txId}
-                    </Typography>
-                    <Typography color={colors.grey[100]}>{transaction.user}</Typography>
-                  </Box>
-                  <Box color={colors.grey[100]}>{transaction.date}</Box>
-                  <Box backgroundColor={colors.greenAccent[500]} p="5px 10px" borderRadius="4px">
-                    ${transaction.cost}
-                  </Box>
-                </Box>
-              ))}
+              <Box
+  display="flex"
+  justifyContent="space-between"
+  alignItems="center"
+  borderBottom={`4px solid ${colors.primary[500]}`}
+  colors={colors.grey[100]}
+  p="15px"
+>
+ 
+</Box>
+{adminUsers.map((user, i) => (
+  <Box
+    key={`${user._id}-${i}`}
+    display="flex"
+    justifyContent="space-between"
+    alignItems="center"
+    borderBottom={`4px solid ${colors.primary[500]}`}
+    p="15px"
+  >
+    <Box>
+      <Typography color={colors.greenAccent[500]} variant="h5" fontWeight="600">
+        {user.name}
+      </Typography>
+      <Typography color={colors.grey[100]}>{user.email}</Typography>
+    </Box>
+
+    <Box backgroundColor={colors.greenAccent[500]} p="5px 10px" borderRadius="4px">
+      {user.adress}
+    </Box>
+  </Box>
+))}
+
             </Box>
 
             {/* ROW 3 */}
@@ -231,7 +285,7 @@ const Dashboard = () => {
               backgroundColor={colors.primary[400]}
             >
               <Typography variant="h5" fontWeight="600" sx={{ padding: "30px 30px 0 30px" }}>
-                Sales Quantity
+                Barchart of complaints by partner
               </Typography>
               <Box height="250px" mt="-20px">
                 <BarChart isDashboard={true} />
@@ -244,7 +298,7 @@ const Dashboard = () => {
               padding="30px"
             >
               <Typography variant="h5" fontWeight="600" sx={{ marginBottom: "15px" }}>
-                Geography Based Traffic
+                Map 
               </Typography>
               <Box height="200px">
                 <GeographyChart isDashboard={true} />
