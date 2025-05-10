@@ -143,7 +143,7 @@ const SideBar = () => {
                       fontWeight="bold" sx={{m:"10px 0 0 0"}}
                     >{userName}</Typography>
                     <Typography
-                    variant="h5" color={colors.greenAccent[800]}
+                    variant="h5" color={colors.greenAccent[300]}
                     >Welcome back</Typography>
                 </Box>
             </Box>
