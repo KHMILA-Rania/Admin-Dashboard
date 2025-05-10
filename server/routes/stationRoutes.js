@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { addStation, deleteStation, getAllStations, getStationById, updateStation } from '../controllers/stationController.js';
+import { addStation, deleteStation, getAllStations, getStationById, reserveStation, updateStation } from '../controllers/stationController.js';
 const router=express.Router();
 
 
@@ -21,7 +21,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-
+router.patch("/reserve/:stationId",reserveStation)
 router.post("/add", upload.single('image'),addStation);
 router.get("/", getAllStations);
 router.get("/:id", getStationById);

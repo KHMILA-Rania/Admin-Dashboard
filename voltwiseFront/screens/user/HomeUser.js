@@ -1,91 +1,115 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Image, Dimensions, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Alert, Modal, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
+import axios from 'axios';  // Make sure axios is imported!
 import CustomBottomBar from './customBottomBar';
-import LinearGradient from 'react-native-linear-gradient';
-import Icon from 'react-native-vector-icons/Ionicons';
-import { useAuth } from '../../context/AuthContext';
+import GLOBALS from '../../global/variables'; // Adjust the path as necessary
+import { useRef } from 'react';
 
 const { height } = Dimensions.get('window');
 
 const HomeUser = ({ navigation }) => {
- 
   const [userType, setUserType] = useState('user');
   const [userName, setUserName] = useState('User');
+  const [userID, setUserID] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [userID, setUserID] = useState(''); // State to hold user ID
-  
-  // Static stations data
-  const [stations, setStations] = useState([
-    {
-      id: '1',
-      name: 'Station 1',
-      description: 'Main charging station',
-      latitude: 36.8000,
-      longitude: 10.1667,
-    },
-    {
-      id: '2',
-      name: 'Station 2',
-      description: 'Secondary charging station',
-      latitude: 36.8581,
-      longitude:  10.3308,
-    },
-  ]);
-  
+
+  const [stations, setStations] = useState([]);
+  const [loadingStations, setLoadingStations] = useState(true);
+
+  const mapRef = useRef(null);
+
   const [region, setRegion] = useState({
     latitude: 37.7749,
     longitude: -122.4194,
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
-  const [loading, setLoading] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
   const [selectedStation, setSelectedStation] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false); // Modal visibility state
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
   useEffect(() => {
     const initialize = async () => {
       try {
-        console.log('Component mounted');
         const storedToken = await AsyncStorage.getItem('token');
         const storedUserType = await AsyncStorage.getItem('userType');
         const storedUserId = await AsyncStorage.getItem('userId');
-        setUserID(storedUserId); 
-        console.log("userid in async storage : ", userID)// Set user ID from AsyncStorage
+        setUserID(storedUserId);
+        console.log('User ID:', storedUserId);
+
         if (storedToken) {
           const userData = JSON.parse(storedToken);
           setUserName(userData?.name || 'User');
-          console.log('User name:', userData?.name);
         }
         if (storedUserType) {
           setUserType(storedUserType);
-          console.log('User type:', storedUserType);
         }
-      
-  
+
+        Geolocation.setRNConfiguration({
+          skipPermissionRequests: false,
+          authorizationLevel: 'whenInUse',
+        });
+
+        getUserLocation();
+        fetchStations();
       } catch (error) {
         console.error('Error loading user data:', error);
       }
     };
 
     initialize();
-    
-    // Configure geolocation
-    Geolocation.setRNConfiguration({
-      skipPermissionRequests: false,
-      authorizationLevel: 'whenInUse',
-    });
-    
-    // Get user location
-    getUserLocation();
   }, []);
 
+  const fetchStations = async () => {
+    try {
+      setLoadingStations(true);
+      const response = await axios.get(`http://${GLOBALS.IP}:3000/station`);
+      setStations(response.data);
+     
+    } catch (error) {
+      console.error('Error fetching stations:', error);
+      Alert.alert('Error', 'Failed to load stations.');
+    } finally {
+      setLoadingStations(false);
+    }
+  };
+
+  const reserveStation = async (stationId) => {
+    try {
+        const response = await axios.patch(`http://${GLOBALS.IP}:3000/station/reserve/${stationId}`, {
+            userId: userID, // Assuming userID is available in your state or storage
+        });
+        Alert.alert('Reservation Successful', response.data.message);
+        fetchStations(); 
+      } catch (error) {
+        console.error('Error reserving station:', error);
+
+        // Check if error response is available
+        if (error.response) {
+            // Server responded with a status other than 2xx
+            const errorMessage = error.response.data.message || 'An error occurred while reserving the station.';
+            Alert.alert('Reservation Failed', errorMessage);
+        } else if (error.request) {
+            // No response was received from the server
+            Alert.alert('Reservation Failed', 'No response from the server. Please check your internet connection.');
+        } else {
+            // Error occurred in setting up the request
+            Alert.alert('Reservation Failed', 'An unexpected error occurred. Please try again later.');
+        }
+    }
+};
+
+
+
   const getUserLocation = () => {
-    setLoading(true);
     
+    setLoadingLocation(true);
+
     Geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
@@ -95,13 +119,11 @@ const HomeUser = ({ navigation }) => {
           latitudeDelta: 0.01,
           longitudeDelta: 0.01,
         });
-        setLoading(false);
-        console.log('Location fetched:', latitude, longitude);
+        setLoadingLocation(false);
       },
       (error) => {
         console.log('Location error:', error);
-        setLoading(false);
-        // Use default location if we can't get the user's location
+        setLoadingLocation(false);
         Alert.alert(
           'Location Error',
           'Unable to get your current location. Using default location instead.'
@@ -113,29 +135,8 @@ const HomeUser = ({ navigation }) => {
 
   const handleStationPress = (station) => {
     setSelectedStation(station);
-    // You can add more functionality here like showing details or navigation
+    setModalVisible(true); // Show modal on station press
   };
-  
-  const lightMapStyle = [
-    {
-      "featureType": "all",
-      "elementType": "geometry.fill",
-      "stylers": [
-          {
-              "weight": "2.00"
-          }
-      ]
-    },
-    // ... rest of the light map style
-  ];
-
-  const darkMapStyle = [
-    {
-      "elementType": "geometry",
-      "stylers": [{"color": "#242f3e"}]
-    },
-    // ... rest of the dark map style
-  ];
 
   const handleLogout = async () => {
     try {
@@ -147,6 +148,10 @@ const HomeUser = ({ navigation }) => {
     } catch (error) {
       console.error('Error during logout:', error);
     }
+  };
+
+  const closeModal = () => {
+    setModalVisible(false); // Close the modal
   };
 
   return (
@@ -162,80 +167,93 @@ const HomeUser = ({ navigation }) => {
         <Text style={styles.title}>Welcome, {userName}!</Text>
       </View>
 
-      <View style={{flex:1, position:'relative'}}>
-        <View style={styles.mapContainer}>
-          <MapView
-            provider={PROVIDER_GOOGLE}
-            style={styles.map}
-            region={region}
-            showsUserLocation={true}
-            showsMyLocationButton={true}
-            customMapStyle={isDarkMode ? darkMapStyle : lightMapStyle}
-            onError={(e) => console.error('Map error:', e.nativeEvent)}
-          >
-            <Marker 
-              coordinate={region} 
-              title="Your Location" 
-              description="You are here"
-              pinColor="blue"
-            />
-            
-            {/* Render station markers */}
-            {stations.map((station) => (
-              <Marker
-                key={station.id}
-                coordinate={{
-                  latitude: station.latitude,
-                  longitude: station.longitude,
-                }}
-                pinColor="green"
-                onPress={() => handleStationPress(station)}
-              >
-                <Image 
-                  source={require('../../assets/logop-blue.png')} 
-                  style={{width: 35, height: 35}}
-                  resizeMode="contain"
-                />
-                <Callout tooltip>
-                  <View style={styles.calloutView}>
-                    <Text style={styles.calloutTitle}>{station.name}</Text>
-                    <Text style={styles.calloutDescription}>{station.description}</Text>
-                  </View>
-                </Callout>
-              </Marker>
-            ))}
-          </MapView>
-          
-          {loading && (
-            <View style={styles.loadingOverlay}>
-              <Text style={styles.loadingText}>Getting your location...</Text>
-            </View>
-          )}
-        </View>
-        
-        <TouchableOpacity 
-          style={styles.refreshButton} 
-          onPress={getUserLocation}
+      <View style={{ flex: 1 }}>
+        <MapView
+          provider={PROVIDER_GOOGLE}
+          style={styles.map}
+          region={region}
+          showsUserLocation={true}
+          showsMyLocationButton={true}
         >
+          <Marker
+            coordinate={region}
+            title="Your Location"
+            description="You are here"
+            pinColor="red"
+          />
+
+          {/* Render stations dynamically */}
+          {stations.map((station) => (
+            <Marker
+              key={station._id}  // Assuming MongoDB ID; adjust if different
+              coordinate={{
+                latitude: station.latitude,
+                longitude: station.longitude,
+              }}
+              pinColor="green"
+              onPress={() => handleStationPress(station)} // Show modal when pressed
+            >
+              <View style={{
+                backgroundColor: 'blue',
+                padding: 8,
+                borderRadius: 20,
+                borderColor: 'white',
+                borderWidth: 2,
+              }}>
+                <Text style={{color: 'white', fontWeight: 'bold'}}>⚡</Text>
+              </View>
+            </Marker>
+          ))}
+        </MapView>
+
+        <TouchableOpacity style={styles.refreshButton} onPress={getUserLocation}>
           <Text style={styles.refreshButtonText}>Refresh Location</Text>
         </TouchableOpacity>
-        
+
+        {/* Modal for displaying station information */}
         {selectedStation && (
-          <View style={styles.stationInfoPanel}>
-            <Text style={styles.stationInfoTitle}>{selectedStation.name}</Text>
-            <Text style={styles.stationInfoDescription}>{selectedStation.description}</Text>
-            <TouchableOpacity 
-              style={styles.navigateButton}
-              onPress={() => {
-                // Implement navigation logic here
-                Alert.alert("Navigation", `Navigating to ${selectedStation.name}`);
-              }}
-            >
-              <Text style={styles.navigateButtonText}>Navigate</Text>
-            </TouchableOpacity>
-          </View>
+          <Modal
+            visible={modalVisible}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={closeModal}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>{selectedStation.name}</Text>
+                <Text style={styles.modalDescription}>{`Location: ${selectedStation.location}`}</Text>
+                <Text style={styles.modalDescription}>{`Capacity: ${selectedStation.capacity}`}</Text>
+                <Text style={styles.modalDescription}>{`Available Slots: ${selectedStation.availableSlots}`}</Text>
+                <Text style={styles.modalDescription}>{`Reserved ?: ${selectedStation.isReserved}`}</Text>
+                <Text style={styles.modalDescription}>{`State : ${selectedStation.state}`}</Text>
+                
+                <TouchableOpacity
+                    style={styles.modalButton}
+                    onPress={() => {
+                        setModalVisible(false);  // Close the modal
+                        navigation.navigate('StationList'); // Navigate to station details page
+                    }}
+                >
+                    <Text style={styles.modalButtonText}>View Stations</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.modalButton}
+                    onPress={() => {
+                        reserveStation(selectedStation._id); // Call your reserve function here
+                    }}
+                >
+                    <Text style={styles.modalButtonText}>Reserve Station</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.closeModalButton} onPress={closeModal}>
+                  <Text style={styles.closeModalText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
         )}
-        
+
         <CustomBottomBar style={styles.customBottomBar} />
       </View>
     </View>
@@ -243,160 +261,88 @@ const HomeUser = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  titles:{
-    alignItems: 'center',  // Center align the titles
-    marginTop: 0,  // Give space below the header
-    paddingHorizontal: 20,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#E4F4FF',
-  },
-  background: {
-    flex: 1,
-    resizeMode: 'cover',
-    justifyContent: 'flex-start', 
-  },
-  logoutButton: {
-    backgroundColor: '#39B2DB', // Light green color
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: '#91a6a2', // Darker green for border
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 5, // For Android shadow
-    alignItems: 'center',
-    marginLeft: 20,
-  },
-  logoutText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  container: { flex: 1, backgroundColor: '#E4F4FF' },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // Puts logo left and logout button right
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: height * 0.05,
-    width: '100%',
   },
-  logo: {
-    width: 50,
-    height: 50,
+  logo: { width: 50, height: 50 },
+  logoutButton: {
+    backgroundColor: '#39B2DB',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 30,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#223958',
-    marginBottom: 5,
-    textAlign: 'center', // Center align the title
-  },
-  subtitle: {
-    fontSize: 18,
-    color: '#34495E',
-    marginTop: 5,
-    textAlign: 'center', 
-  },
-  mapContainer: {
-    flex: 1,           // Takes all available space
-    marginTop: 10,     // Space below header
-    marginBottom: 15,  // Matches bottom bar height
-    borderRadius: 10,
-    overflow: 'hidden', 
-  },
-  map: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2D9CDB',
-  },
+  logoutText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  titles: { alignItems: 'center', marginTop: 0 },
+  title: { fontSize: 26, fontWeight: 'bold', color: '#223958' },
+  map: { flex: 1 },
   refreshButton: {
     alignSelf: 'center',
     backgroundColor: '#2D9CDB',
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 30,
-    marginTop: 10,
+    marginVertical: 10,
   },
-  refreshButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+  refreshButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  calloutView: { width: 150 },
+  calloutTitle: { fontWeight: 'bold', fontSize: 14 },
+  calloutDescription: { fontSize: 12 },
+
+  // Modal Styles
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
   },
-  customBottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 60,  // Adjust the height as needed
-    backgroundColor: '#fff',
-    // Ensure the bottom bar is on top
-  },
-  // New styles for station markers and info panel
-  calloutView: {
-    width: 160,
-    padding: 10,
+  modalContent: {
     backgroundColor: 'white',
+    padding: 20,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  calloutTitle: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 5,
-  },
-  calloutDescription: {
-    fontSize: 14,
-  },
-  stationInfoPanel: {
-    position: 'absolute',
-    bottom: 70, // Position above the bottom bar
-    left: 20,
-    right: 20,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 15,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  stationInfoTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#223958',
-  },
-  stationInfoDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 10,
-  },
-  navigateButton: {
-    backgroundColor: '#39B2DB',
-    padding: 10,
-    borderRadius: 20,
+    width: 300,
     alignItems: 'center',
   },
-  navigateButtonText: {
-    color: 'white',
+  modalTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
-  }
+    marginBottom: 10,
+  },
+  modalDescription: {
+    fontSize: 14,
+    marginBottom: 5,
+    color: '#555',
+  },
+  closeModalButton: {
+    marginTop: 15,
+    backgroundColor: '#2D9CDB',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+  },
+  closeModalText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  modalButton: {
+    backgroundColor: '#2D9CDB',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    marginVertical: 5,
+},
+modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+},
 });
 
 export default HomeUser;

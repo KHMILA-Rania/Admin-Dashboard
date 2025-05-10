@@ -1,98 +1,194 @@
 import Station from "../models/station.js";
-import mongoose from 'mongoose'
+import mongoose from 'mongoose';
 
-const addStation=async (req, res)=>{
-    const {name, location,capacity,owner, state, plugType,
-        chargingTime,kilowatt
+// Add Station
+const addStation = async (req, res) => {
+  const {
+    name,
+    location,
+    capacity,
+    owner,
+    state,
+    plugType,
+    chargingTime,
+    kilowatt,
+    availableSlots,  // New field
+    pricePerKWh,  // New field
+    supportedVehicles,  // New field
+    latitude,  // New field
+    longitude,  // New field
+  } = req.body;
 
-    }=req.body;
-    try{
-        if (!name || !owner) {
-            return res.status(400).json({ message: "Name and owner are required." });
-          }
-
-        const newStation=new Station({
-            name, 
-            location,
-            capacity,
-            owner,
-            state,
-            plugType,
-            chargingTime,
-            kilowatt,
-            image: req.file ? `/uploads/${req.file.filename}` : null,
-
-        });
-        await newStation.save()
-        .then(station => res.status(201).json(station))
-        .catch(err => res.status(500).json({ message: err.message }));
-
+  try {
+    if (!name || !owner) {
+      return res.status(400).json({ message: "Name and owner are required." });
     }
-    catch(error){
 
-        console.error("Error creating station:", error);
+    const newStation = new Station({
+      name,
+      location,
+      capacity,
+      owner,
+      state,
+      plugType,
+      chargingTime,
+      kilowatt,
+      availableSlots,  // New field
+      pricePerKWh,  // New field
+      supportedVehicles,  // New field
+      latitude,  // New field
+      longitude,  // New field
+      image: req.file ? `/uploads/${req.file.filename}` : null,
+      isReserved: false,  // Initial state of reservation
+      reservedBy: null,  // Initially no reservation
+      reservationTime: null,  // Initially no reservation time
+    });
+
+    await newStation.save()
+      .then(station => res.status(201).json(station))
+      .catch(err => res.status(500).json({ message: err.message }));
+
+  } catch (error) {
+    console.error("Error creating station:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Get All Stations
+const getAllStations = async (req, res) => {
+  try {
+    const stations = await Station.find().populate("owner");
+    res.status(200).json(stations);
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Get Station By ID
+const getStationById = async (req, res) => {
+  try {
+    const station = await Station.findById(req.params.id).populate("owner");
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid station ID" });
+    }
+
+    if (!station) {
+      return res.status(404).json({ message: "Station not found" });
+    }
+
+    res.status(200).json({ "station": station });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Update Station
+const updateStation = async (req, res) => {
+  try {
+    const updated = await Station.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Station not found" });
+    }
+
+    res.status(200).json({ message: "Station updated", station: updated });
+  } catch (error) {
+    console.error("Error updating station:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Delete Station
+const deleteStation = async (req, res) => {
+  try {
+    const deleted = await Station.findByIdAndDelete(req.params.id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Station not found" });
+    }
+
+    res.status(200).json({ message: "Station deleted" });
+  } catch (error) {
+    console.error("Error deleting station:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Reserve a Station
+const reserveStation = async (req, res) => {
+    const { userId } = req.body;
+    const expirationTime = 30 * 60 * 1000; // Reservation expiration time (30 minutes)
+
+    if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+    }
+
+    try {
+        const stationId = req.params.stationId;
+
+        const station = await Station.findById(stationId);
+
+        if (!station) {
+            return res.status(404).json({ message: "Station not found" });
+        }
+
+        // Check if station is already reserved
+        if (station.isReserved) {
+            return res.status(400).json({ message: "Station is already reserved" });
+        }
+
+        // Check if there are available slots for reservation
+        if (station.availableSlots <= 0) {
+            return res.status(400).json({ message: "No available slots for reservation" });
+        }
+
+        // Reserve the station
+        station.isReserved = true;
+        station.reservedBy = userId;
+        station.reservationTime = new Date();
+        station.reservationExpiresAt = new Date(Date.now() + expirationTime);  // Set expiration time
+        station.availableSlots -= 1;  // Decrease available slots
+
+        await station.save();
+
+        res.status(200).json({ message: "Station reserved successfully", station });
+    } catch (error) {
+        console.error("Error reserving station:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 };
 
+// Free a Station
+const freeStation = async (req, res) => {
+  try {
+    const station = await Station.findById(req.params.id);
 
-const getAllStations=async (req,res)=>{
-    try{
-        const stations= await Station.find().populate("owner");
-        res.status(200).json(stations)
+    if (!station) {
+      return res.status(404).json({ message: "Station not found" });
     }
-    catch(error){
-        res.status(500).json({message:"internal server error"})
+
+    if (!station.isReserved) {
+      return res.status(400).json({ message: "Station is not reserved" });
     }
+
+    // Free the station
+    station.isReserved = false;
+    station.reservedBy = null;
+    station.reservationTime = null;
+    station.availableSlots += 1;  // Increase available slots
+
+    await station.save();
+
+    res.status(200).json({ message: "Station reservation canceled", station });
+  } catch (error) {
+    console.error("Error freeing station:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
-const getStationById=async(req,res)=>{
-    try{
-        const station= await Station.findById(req.params.id).populate("owner");
-        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-            return res.status(400).json({ message: "Invalid station ID" });
-          }
-        if (!station) {
-            return res.status(404).json({ message: "Station not found" });
-          }
-
-        res.status(200).json({"station":station})
-    }
-    catch(error){
-        res.status(500).json({message:"internal server error"})   
-    }
-};
-
-const updateStation=async(req,res)=>{
-    try{
-        const updated = await Station.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true }
-          );
-
-          if (!updated) {
-            return res.status(404).json({ message: "Station not found" });
-          }
-          res.status(200).json({ message: "Station updated", station: updated });
-        } catch (error) {
-          console.error("Error updating station:", error);
-          res.status(500).json({ message: "Internal server error" });
-        }
-};
-
-const deleteStation=async(req,res)=>{
-    try{
-        const deleted= await Station.findByIdAndDelete(req.params.id);
-        if(!deleted){
-            return res.status(404).json({ message: "Station not found" });
-        }
-        res.status(200).json({ message: "Station deleted" });
-    }
-    catch(error){
-        console.error("Error deleting station:", error);
-    res.status(500).json({ message: "Internal server error" })
-    }
-}
-
-export {addStation, getAllStations,getStationById, updateStation, deleteStation}
+export { addStation, getAllStations, getStationById, updateStation, deleteStation, reserveStation, freeStation };
