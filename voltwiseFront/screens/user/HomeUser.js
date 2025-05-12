@@ -20,10 +20,12 @@ const HomeUser = ({ navigation }) => {
   const [loadingStations, setLoadingStations] = useState(true);
 
   const mapRef = useRef(null);
+const [reservationEndTime, setReservationEndTime] = useState(null);
+const [timeLeft, setTimeLeft] = useState('');
 
   const [region, setRegion] = useState({
-    latitude: 37.7749,
-    longitude: -122.4194,
+    latitude: 36.895666,
+    longitude: 10.1808403,
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
@@ -79,33 +81,92 @@ const HomeUser = ({ navigation }) => {
     }
   };
 
-  const reserveStation = async (stationId) => {
-    try {
-        const response = await axios.patch(`http://${GLOBALS.IP}:3000/station/reserve/${stationId}`, {
-            userId: userID, // Assuming userID is available in your state or storage
-        });
-        Alert.alert('Reservation Successful', response.data.message);
-        fetchStations(); 
-      } catch (error) {
-        console.error('Error reserving station:', error);
+const reserveStation = async (stationId) => {
+  try {
+    const response = await axios.patch(`http://${GLOBALS.IP}:3000/station/reserve/${stationId}`, {
+      userId: userID,
+    });
 
-        // Check if error response is available
-        if (error.response) {
-            // Server responded with a status other than 2xx
-            const errorMessage = error.response.data.message || 'An error occurred while reserving the station.';
-            Alert.alert('Reservation Failed', errorMessage);
-        } else if (error.request) {
-            // No response was received from the server
-            Alert.alert('Reservation Failed', 'No response from the server. Please check your internet connection.');
-        } else {
-            // Error occurred in setting up the request
-            Alert.alert('Reservation Failed', 'An unexpected error occurred. Please try again later.');
-        }
+    Alert.alert('Reservation Successful', response.data.message);
+
+    // Start 30-minute timer
+    const endTime = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes from now
+    setReservationEndTime(endTime);
+
+    fetchStations();
+  } catch (error) {
+    console.error('Error reserving station:', error);
+
+    if (error.response) {
+      const errorMessage = error.response.data.message || 'An error occurred while reserving the station.';
+      Alert.alert('Reservation Failed', errorMessage);
+    } else if (error.request) {
+      Alert.alert('Reservation Failed', 'No response from the server. Please check your internet connection.');
+    } else {
+      Alert.alert('Reservation Failed', 'An unexpected error occurred. Please try again later.');
     }
+  }
 };
 
 
+useEffect(() => {
+  let timer;
 
+  if (reservationEndTime) {
+    timer = setInterval(() => {
+      const now = new Date();
+      const diff = reservationEndTime - now;
+
+      if (diff <= 0) {
+        clearInterval(timer);
+        setTimeLeft('Expired');
+        setReservationEndTime(null);
+      } else {
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        setTimeLeft(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+      }
+    }, 1000);
+  }
+
+  return () => clearInterval(timer);
+}, [reservationEndTime]);
+
+
+  const freeStation = async (stationId) => {
+  try {
+    console.log('Freeing station with ID:', stationId);
+    const response = await axios.patch(`http://${GLOBALS.IP}:3000/station/free/${stationId}`, {
+      userId: userID,
+    });
+
+    Alert.alert('Station Freed', response.data.message);
+
+    // Stop the timer and hide it
+    setReservationEndTime(null);
+    setTimeLeft('');
+
+    fetchStations();
+  } catch (error) {
+    console.error('Error freeing station:', error);
+    Alert.alert('Freeing Station Failed', 'An error occurred while freeing the station.');
+  }
+};
+
+
+   const extendReservation = async (stationId) => {
+    try {
+      const response = await axios.patch(`http://${GLOBALS.IP}:3000/station/extend/${stationId}`, {
+        userId: userID,
+      });
+      Alert.alert('Reservation Extended', response.data.message);
+      fetchStations();
+    } catch (error) {
+      console.error('Error extending reservation:', error);
+      Alert.alert('Extension Failed', 'An error occurred while extending the reservation.');
+    }
+  };
+  
   const getUserLocation = () => {
     
     setLoadingLocation(true);
@@ -157,6 +218,11 @@ const HomeUser = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        {reservationEndTime && (
+  <View style={styles.timerBanner}>
+    <Text style={styles.timerText}>Time left: {timeLeft}</Text>
+  </View>
+)}
         <Image source={require('../../assets/logop-blue.png')} style={styles.logo} />
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutText}>Logout</Text>
@@ -245,7 +311,18 @@ const HomeUser = ({ navigation }) => {
                 >
                     <Text style={styles.modalButtonText}>Reserve Station</Text>
                 </TouchableOpacity>
-
+                  <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={() => extendReservation(selectedStation._id)} // Extend reservation
+                >
+                  <Text style={styles.modalButtonText}>Extend Reservation</Text>
+                </TouchableOpacity>
+                     <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={() => freeStation(selectedStation._id)} // Free station
+                >
+                  <Text style={styles.modalButtonText}>Free Station</Text>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.closeModalButton} onPress={closeModal}>
                   <Text style={styles.closeModalText}>Close</Text>
                 </TouchableOpacity>
@@ -261,6 +338,23 @@ const HomeUser = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  timerBanner: {
+  backgroundColor: '#4CAF50',
+  paddingVertical: 10,
+  alignItems: 'center',
+  justifyContent: 'center',
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  zIndex: 1000,
+},
+timerText: {
+  color: 'white',
+  fontSize: 16,
+  fontWeight: 'bold',
+},
+
   container: { flex: 1, backgroundColor: '#E4F4FF' },
   header: {
     flexDirection: 'row',

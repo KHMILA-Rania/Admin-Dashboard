@@ -119,51 +119,111 @@ const deleteStation = async (req, res) => {
   }
 };
 
-// Reserve a Station
+// Reserve
 const reserveStation = async (req, res) => {
-    const { userId } = req.body;
-    const expirationTime = 30 * 60 * 1000; // Reservation expiration time (30 minutes)
+  const { userId } = req.body;
+  const expirationTime = 30 * 60 * 1000; // Reservation expiration time (30 minutes)
 
-    if (!userId) {
-        return res.status(400).json({ message: "User ID is required" });
+  if (!userId) {
+    return res.status(400).json({ message: "User ID is required" });
+  }
+
+  try {
+    const stationId = req.params.stationId;
+    const station = await Station.findById(stationId);
+
+    if (!station) {
+      return res.status(404).json({ message: "Station not found" });
     }
 
-    try {
-        const stationId = req.params.stationId;
-
-        const station = await Station.findById(stationId);
-
-        if (!station) {
-            return res.status(404).json({ message: "Station not found" });
-        }
-
-        // Check if station is already reserved
-        if (station.isReserved) {
-            return res.status(400).json({ message: "Station is already reserved" });
-        }
-
-        // Check if there are available slots for reservation
-        if (station.availableSlots <= 0) {
-            return res.status(400).json({ message: "No available slots for reservation" });
-        }
-
-        // Reserve the station
-        station.isReserved = true;
-        station.reservedBy = userId;
-        station.reservationTime = new Date();
-        station.reservationExpiresAt = new Date(Date.now() + expirationTime);  // Set expiration time
-        station.availableSlots -= 1;  // Decrease available slots
-
-        await station.save();
-
-        res.status(200).json({ message: "Station reserved successfully", station });
-    } catch (error) {
-        console.error("Error reserving station:", error);
-        res.status(500).json({ message: "Internal server error" });
+    // Check if station is already reserved
+    if (station.isReserved) {
+      return res.status(400).json({ message: "Station is already reserved" });
     }
+
+    // Check if there are available slots for reservation
+    if (station.availableSlots <= 0) {
+      return res.status(400).json({ message: "No available slots for reservation" });
+    }
+
+    // Reserve the station
+    station.isReserved = true;
+    station.reservedBy = userId;
+    station.reservationTime = new Date();
+    station.reservationExpiresAt = new Date(Date.now() + expirationTime);  // Set expiration time
+    station.availableSlots -= 1;  // Decrease available slots
+
+    await station.save();
+
+    // Automatically free the station after 30 minutes if not extended
+    setTimeout(async () => {
+      const updatedStation = await Station.findById(stationId);
+
+      // If the reservation has not been extended, release the station
+      if (updatedStation && updatedStation.reservationExpiresAt <= new Date()) {
+        updatedStation.isReserved = false;
+        updatedStation.reservedBy = null;
+        updatedStation.reservationTime = null;
+        updatedStation.availableSlots += 1; // Increase available slots
+
+        await updatedStation.save();
+        console.log(`Station ${stationId} has been automatically freed after reservation expiration.`);
+      }
+    }, expirationTime);
+
+    res.status(200).json({ message: "Station reserved successfully", station });
+  } catch (error) {
+    console.error("Error reserving station:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
-// Free a Station
+// Extend Reservation
+const extendReservation = async (req, res) => {
+  const { userId } = req.body;
+  const extensionTime = 30 * 60 * 1000; // Additional 30 minutes
+
+  try {
+    const stationId = req.params.stationId;
+    const station = await Station.findById(stationId);
+
+    if (!station) {
+      return res.status(404).json({ message: "Station not found" });
+    }
+
+    // Check if the user is the one who reserved the station
+    if (station.reservedBy !== userId) {
+      return res.status(400).json({ message: "You are not the one who reserved this station" });
+    }
+
+    // Extend the reservation time
+    station.reservationExpiresAt = new Date(Date.now() + extensionTime);  // Extend expiration time
+    await station.save();
+
+    // Reset the automatic release timer
+    setTimeout(async () => {
+      const updatedStation = await Station.findById(stationId);
+
+      // If the reservation has not been extended, release the station
+      if (updatedStation && updatedStation.reservationExpiresAt <= new Date()) {
+        updatedStation.isReserved = false;
+        updatedStation.reservedBy = null;
+        updatedStation.reservationTime = null;
+        updatedStation.availableSlots += 1; // Increase available slots
+
+        await updatedStation.save();
+        console.log(`Station ${stationId} has been automatically freed after reservation expiration.`);
+      }
+    }, extensionTime); // Reset the expiration time for the extension
+
+    res.status(200).json({ message: "Reservation extended successfully", station });
+  } catch (error) {
+    console.error("Error extending reservation:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Free a Station Manually
 const freeStation = async (req, res) => {
   try {
     const station = await Station.findById(req.params.id);
@@ -190,5 +250,6 @@ const freeStation = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 export { addStation, getAllStations, getStationById, updateStation, deleteStation, reserveStation, freeStation };

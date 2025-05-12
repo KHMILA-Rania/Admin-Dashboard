@@ -1,36 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, Alert, StyleSheet , TouchableOpacity} from 'react-native';
-import AuthService from '../services/authService'; // Import your AuthService
-import GLOBALS from '../global/variables';
+import {
+  View,
+  Text,
+  TextInput,
+  Alert,
+  StyleSheet,
+  TouchableOpacity
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import style from './style';
+import { Picker } from '@react-native-picker/picker'; // For dropdown
+import GLOBALS from '../global/variables';
 import CustomBottomBar from './user/customBottomBar';
 
-
 const Complaint = () => {
-  const navigation=useNavigation();
+  const navigation = useNavigation();
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
-  const [userId, setUserId] = useState(null); // To store the user ID
-  
+  const [userId, setUserId] = useState(null);
+  const [stations, setStations] = useState([]);
+  const [selectedStationId, setSelectedStationId] = useState(null);
+
   useEffect(() => {
-    const fetchUserId = async () => {
+    const fetchUserIdAndStations = async () => {
       try {
         const storedUserId = await AsyncStorage.getItem('userId');
-        if (storedUserId) {
-          setUserId(storedUserId);
+        if (storedUserId) setUserId(storedUserId);
+
+        const response = await fetch(`http://${GLOBALS.IP}:3000/station`);
+        const data = await response.json();
+        if (response.ok) {
+          setStations(data);
         } else {
-          setError('User ID not found');
-          setIsLoading(false);
+          console.error('Failed to load stations');
         }
       } catch (err) {
-        setError('Failed to fetch user ID');
-        setIsLoading(false);
+        console.error('Error loading user or stations:', err);
       }
     };
 
-    fetchUserId();
+    fetchUserIdAndStations();
   }, []);
 
   const handleSubmit = async () => {
@@ -41,11 +50,10 @@ const Complaint = () => {
 
     if (!userId) {
       Alert.alert('Error', 'User ID is not available.');
-      return; // Don't proceed if the userId is not available
+      return;
     }
 
     try {
-      console.log('before submiting complaint', { userId, subject, description });
       const response = await fetch(`http://${GLOBALS.IP}:3000/complaint/add`, {
         method: 'POST',
         headers: {
@@ -55,6 +63,7 @@ const Complaint = () => {
           userId,
           subject,
           description,
+          stationId: selectedStationId || null,
         }),
       });
 
@@ -64,6 +73,7 @@ const Complaint = () => {
         Alert.alert('Success', 'Complaint submitted successfully!');
         setSubject('');
         setDescription('');
+        setSelectedStationId(null);
       } else {
         Alert.alert('Error', data.message || 'Failed to submit complaint');
       }
@@ -74,43 +84,58 @@ const Complaint = () => {
 
   return (
     <View style={{ flex: 1 }}>
-    <View style={styles.container}>
-      <Text style={styles.title}>Submit a Complaint</Text>
-      
-      <Text style={styles.label}>Subject</Text>
-      <TextInput
-        style={styles.input}
-        value={subject}
-        onChangeText={setSubject}
-        placeholder="Enter the subject"
-      />
-      
-      <Text style={styles.label}>Description</Text>
-      <TextInput
-        style={[styles.input, styles.descriptionInput]}
-        value={description}
-        onChangeText={setDescription}
-        placeholder="Enter the description"
-        multiline
-        numberOfLines={7}
-      />
-      
-      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-  <Text style={styles.submitButtonText}>Submit Complaint</Text>
-</TouchableOpacity>
+      <View style={styles.container}>
+        <Text style={styles.title}>Submit a Complaint</Text>
 
+        <Text style={styles.label}>Subject</Text>
+        <TextInput
+          style={styles.input}
+          value={subject}
+          onChangeText={setSubject}
+          placeholder="Enter the subject"
+        />
 
-<TouchableOpacity style={styles.complaintsbtn} onPress={() => navigation.navigate('ComplaintsList')}>
-  <Text style={styles.complaintsLinkText}>Go to Complaints List</Text>
-</TouchableOpacity>
+        <Text style={styles.label}>Description</Text>
+        <TextInput
+          style={[styles.input, styles.descriptionInput]}
+          value={description}
+          onChangeText={setDescription}
+          placeholder="Enter the description"
+          multiline
+          numberOfLines={7}
+        />
 
+        <Text style={styles.label}>Station (optional)</Text>
+        <View style={styles.dropdown}>
+          <Picker
+            selectedValue={selectedStationId ?? 'none'}
+            onValueChange={(itemValue) =>
+              setSelectedStationId(itemValue !== 'none' ? itemValue : null)
+            
+            }
+             style={{ color: '#000', backgroundColor: '#fff' }}
+          >
+            <Picker.Item label="None" value="none" />
+            {stations.map((station) => (
+              <Picker.Item key={station._id} label={station.name} value={station._id} />
+            ))}
+          </Picker>
+        </View>
 
+        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+          <Text style={styles.submitButtonText}>Submit Complaint</Text>
+        </TouchableOpacity>
 
-     
+        <TouchableOpacity
+          style={styles.complaintsbtn}
+          onPress={() => navigation.navigate('ComplaintsList')}
+        >
+          <Text style={styles.complaintsLinkText}>Go to Complaints List</Text>
+        </TouchableOpacity>
+      </View>
+
+      <CustomBottomBar />
     </View>
-    <CustomBottomBar />
-    </View> 
-   
   );
 };
 
@@ -142,6 +167,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#fff',
   },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    marginBottom: 15,
+    backgroundColor: '#fff',
+  },
+  descriptionInput: {
+    height: 120,
+    textAlignVertical: 'top',
+  },
   submitButton: {
     backgroundColor: '#14939C',
     paddingVertical: 14,
@@ -154,28 +190,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  complaintsLink: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
   complaintsLinkText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '500',
   },
-  complaintsbtn:{
+  complaintsbtn: {
     backgroundColor: '#568c89',
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 10,
   },
-  descriptionInput: {
-    height: 120, 
-    textAlignVertical: 'top', 
-  },
 });
-
-
 
 export default Complaint;

@@ -13,6 +13,11 @@ const complaintSchema = new Schema({
     type: String,
     required: true,
   },
+  stationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Station', // Reference to Station model
+    default: null,   // Only populated if it's a station-related complaint
+  },
   description: {
     type: String,
     required: true,

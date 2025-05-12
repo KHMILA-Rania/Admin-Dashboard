@@ -3,26 +3,26 @@ import mongoose from 'mongoose'; // Make sure mongoose is imported
 import User from '../models/user.js';
 const CreateComplaint = async (req, res) => {
     try {
-        const { userId, subject, description } = req.body;
+        const { userId, subject, description, stationId } = req.body;
 
-        // Debugging the userId being passed
-        console.log('User ID from request:', userId);  // Log it to see its format
+        console.log('User ID from request:', userId);
 
-        // Make sure userId is a valid ObjectId
+        // Validate userId
         const validUserId = mongoose.Types.ObjectId.isValid(userId) ? userId : null;
-
         if (!validUserId) {
             return res.status(400).json({ message: 'Invalid user ID' });
         }
 
-        // Log userId as ObjectId before query
-        console.log('Searching for user with ID:', validUserId);
-
-        // Fetch the user from the database using the correct format
-        const user = await User.findById(validUserId);  // Use validUserId directly
-
+        // Fetch the user to confirm existence
+        const user = await User.findById(validUserId);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Validate stationId if provided
+        let validStationId = null;
+        if (stationId && mongoose.Types.ObjectId.isValid(stationId)) {
+            validStationId = stationId;
         }
 
         // Create the new complaint
@@ -30,15 +30,17 @@ const CreateComplaint = async (req, res) => {
             userId: validUserId,
             subject,
             description,
+            stationId: validStationId || null, // Only add it if it's valid
         });
 
         await newComplaint.save();
         res.status(200).json({ message: 'Complaint submitted', Complaint: newComplaint });
     } catch (err) {
-        console.error('Error:', err);  // Add this to log any error
+        console.error('Error:', err);
         res.status(500).json({ message: err.message });
     }
 };
+
 
 
 // Get complaints for a specific user
