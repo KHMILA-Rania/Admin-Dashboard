@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, ScrollView, Alert } from 'react-native';
+import {
+  View, Text, FlatList, Image, TouchableOpacity, StyleSheet,
+  ActivityIndicator, Modal, ScrollView, Alert
+} from 'react-native';
 import axios from 'axios';
 import GLOBALS from '../global/variables';
 import CustomBottomBar from './user/customBottomBar';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const StationList = () => {
   const [stations, setStations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedStation, setSelectedStation] = useState(null);
+
+  const navigation = useNavigation();
 
   useEffect(() => {
     const fetchStations = async () => {
@@ -31,6 +38,31 @@ const StationList = () => {
     setModalVisible(true);
   };
 
+  // Updated reservation function to use /station/:stationId/reserve
+ const reserveStation = async (stationId) => {
+  try {
+    const response = await axios.post(
+      `http://${GLOBALS.IP}:3000/reservation/${stationId}/reserve`,
+      { userId: userID }
+    );
+
+    Alert.alert('Reservation Successful', response.data.message);
+    // Set both the active reservation and end time
+    setActiveReservation(response.data.reservation);
+    console.log('Active reservation state:', response.data.reservation);
+    setReservationEndTime(new Date(response.data.reservation.endTime));
+    fetchStations(); // Refresh station data
+  } catch (error) {
+    console.error('Error reserving station:', error);
+    if (error.response) {
+      Alert.alert('Reservation Failed', error.response.data.message || 'Failed to reserve station');
+    } else {
+      Alert.alert('Error', 'Could not connect to server');
+    }
+  }
+};
+
+
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <Image source={{ uri: item.image }} style={styles.image} />
@@ -38,11 +70,19 @@ const StationList = () => {
         <Text style={styles.name}>{item.name}</Text>
         <Text style={styles.location}>📍 {item.location}</Text>
         <Text style={styles.state}>State: {item.state}</Text>
+
         <TouchableOpacity
           style={styles.button}
           onPress={() => handleViewDetails(item)}
         >
           <Text style={styles.buttonText}>View Details</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: '#28a745', marginTop: 8 }]}
+          onPress={() => reserveStation(item._id)}
+        >
+          <Text style={styles.buttonText}>Reserve</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -59,6 +99,25 @@ const StationList = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.listTitle}>Available Charging Stations</Text>
+
+      <TouchableOpacity
+        style={styles.reservationButton}
+        onPress={async () => {
+          try {
+            const userId = await AsyncStorage.getItem('userId');
+            if (userId) {
+              navigation.navigate('UserReservations', { userId });
+            } else {
+              Alert.alert('Error', 'User ID not found');
+            }
+          } catch (err) {
+            Alert.alert('Error', 'Failed to retrieve user ID');
+          }
+        }}
+      >
+        <Text style={styles.reservationButtonText}>Go to My Reservations</Text>
+      </TouchableOpacity>
+
       <FlatList
         data={stations}
         keyExtractor={(item) => item._id}
@@ -66,7 +125,6 @@ const StationList = () => {
         contentContainerStyle={styles.listContent}
       />
 
-      {/* Modal with opaque background and content properly centered */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -98,7 +156,6 @@ const StationList = () => {
         </View>
       </Modal>
 
-      {/* Fixed bottom bar */}
       <CustomBottomBar />
     </View>
   );
@@ -170,6 +227,19 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
+  reservationButton: {
+    backgroundColor: '#007AFF',
+    marginHorizontal: 16,
+    marginBottom: 10,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  reservationButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   centered: {
     flex: 1,
     justifyContent: 'center',
@@ -179,11 +249,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)', // Semi-transparent background
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalBox: {
-    width: '85%', // Adjust modal width
-    maxHeight: '80%', // Limit the height
+    width: '85%',
+    maxHeight: '80%',
     backgroundColor: 'white',
     borderRadius: 10,
     padding: 20,

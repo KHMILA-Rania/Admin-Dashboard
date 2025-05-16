@@ -57,25 +57,19 @@ const stationSchema = new mongoose.Schema({
     type: Number,
     required: true,  // Longitude of the station
   },
-  
-  // Reservation-related fields
   isReserved: {
     type: Boolean,
-    default: false,  // Track if the station is reserved
+    default: false,  // Indicates if the station is reserved
   },
-  reservedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User", // Assuming there's a User model for the client
-    required: false,  // This will be filled when a reservation is made
-  },
-  reservationTime: {
-    type: Date,
-    required: false,  // Time when the station was reserved
-  },
-  reservationExpiresAt: {  // New field for expiration
-    type: Date,
-    default: null
-  },
+  
+  // Reservation-related fields
+
+ createdAt: {
+  type: Date,
+  default: Date.now,
+},
+
+
 });
 
 export default mongoose.model('Station', stationSchema);

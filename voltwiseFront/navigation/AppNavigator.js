@@ -15,6 +15,7 @@ import Complaint from '../screens/Complaint';
 import CustomBottomBar from '../screens/user/customBottomBar';
 import UserProfile from '../screens/user/userProfile';
 import ComplaintsList from '../screens/user/ComplaintsList';
+import UserReservations from '../screens/user/UserReservations';
 import StationList from '../screens/StationList';
 const Stack = createNativeStackNavigator();
 
@@ -36,6 +37,7 @@ export default function AppNavigator (){
           <Stack.Screen name="userProfile" component={UserProfile} />
           <Stack.Screen name="ComplaintsList" component={ComplaintsList} />
           <Stack.Screen name="StationList" component={StationList} />
+           <Stack.Screen name="UserReservations" component={UserReservations} />
           </Stack.Navigator>
         </NavigationContainer>
       );

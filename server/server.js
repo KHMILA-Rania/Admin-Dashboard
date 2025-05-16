@@ -6,10 +6,13 @@ import roleRoutes from './routes/roleRoutes.js';
 import userRoutes from './routes/userRoutes.js'; 
 import partnerRoutes from './routes/partnerRoutes.js'
 import complaintRoutes from './routes/complaintRoutes.js';
-import stationRoutes from './routes/stationRoutes.js'
+import stationRoutes from './routes/stationRoutes.js';
+import reservationRoutes from './routes/reservationRoutes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import nodemailer from 'nodemailer';
+import cron from 'node-cron';
+import { expireReservations } from './controllers/reservationController.js';
 import cors from 'cors';
 dotenv.config();
 const app = express();
@@ -43,7 +46,10 @@ app.options('*', cors({
   credentials: true,
 }));
 
-
+cron.schedule('*/10 * * * *', async () => {
+  console.log("Running reservation expiry job...");
+  await expireReservations();
+});
 app.use(express.json());
 
 
@@ -64,6 +70,8 @@ mongoose.connect(mongoURI, {connectTimeoutMS: 10000, useNewUrlParser: true, useU
 //auth routes
 app.use('/auth',authRoutes);
 
+//reservation routes
+app.use('/reservation',reservationRoutes);
 
 //role routes
 app.use('/role',roleRoutes);

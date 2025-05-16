@@ -15,26 +15,26 @@ const HomeUser = ({ navigation }) => {
   const [userName, setUserName] = useState('User');
   const [userID, setUserID] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
-
   const [stations, setStations] = useState([]);
   const [loadingStations, setLoadingStations] = useState(true);
-
   const mapRef = useRef(null);
-const [reservationEndTime, setReservationEndTime] = useState(null);
-const [timeLeft, setTimeLeft] = useState('');
-
+ 
   const [region, setRegion] = useState({
     latitude: 36.895666,
     longitude: 10.1808403,
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
+  const [activeReservation, setActiveReservation] = useState(null);
+const [reservationEndTime, setReservationEndTime] = useState(null);
+const [timeLeft, setTimeLeft] = useState('');
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [selectedStation, setSelectedStation] = useState(null);
   const [modalVisible, setModalVisible] = useState(false); // Modal visibility state
 
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
-
+  
+  
+  
   useEffect(() => {
     const initialize = async () => {
       try {
@@ -83,30 +83,28 @@ const [timeLeft, setTimeLeft] = useState('');
 
 const reserveStation = async (stationId) => {
   try {
-    const response = await axios.patch(`http://${GLOBALS.IP}:3000/station/reserve/${stationId}`, {
-      userId: userID,
-    });
+    const response = await axios.post(
+      `http://${GLOBALS.IP}:3000/reservation/${stationId}/reserve`,
+      { userId: userID }
+    );
 
     Alert.alert('Reservation Successful', response.data.message);
-
-    // Start 30-minute timer
-    const endTime = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes from now
-    setReservationEndTime(endTime);
-
-    fetchStations();
+    // Set both the active reservation and end time
+    setActiveReservation(response.data.reservation);
+    console.log('Active reservation state:', response.data.reservation);
+    setReservationEndTime(new Date(response.data.reservation.endTime));
+    fetchStations(); // Refresh station data
   } catch (error) {
     console.error('Error reserving station:', error);
-
     if (error.response) {
-      const errorMessage = error.response.data.message || 'An error occurred while reserving the station.';
-      Alert.alert('Reservation Failed', errorMessage);
-    } else if (error.request) {
-      Alert.alert('Reservation Failed', 'No response from the server. Please check your internet connection.');
+      Alert.alert('Reservation Failed', error.response.data.message || 'Failed to reserve station');
     } else {
-      Alert.alert('Reservation Failed', 'An unexpected error occurred. Please try again later.');
+      Alert.alert('Error', 'Could not connect to server');
     }
   }
 };
+
+
 
 
 useEffect(() => {
@@ -120,7 +118,9 @@ useEffect(() => {
       if (diff <= 0) {
         clearInterval(timer);
         setTimeLeft('Expired');
+        setActiveReservation(null);
         setReservationEndTime(null);
+        fetchStations(); // Refresh to update station availability
       } else {
         const minutes = Math.floor(diff / 60000);
         const seconds = Math.floor((diff % 60000) / 1000);
@@ -132,41 +132,69 @@ useEffect(() => {
   return () => clearInterval(timer);
 }, [reservationEndTime]);
 
-
-  const freeStation = async (stationId) => {
+   const extendReservation = async (reservationId) => {
   try {
-    console.log('Freeing station with ID:', stationId);
-    const response = await axios.patch(`http://${GLOBALS.IP}:3000/station/free/${stationId}`, {
-      userId: userID,
-    });
+    const response = await axios.patch(
+      `http://${GLOBALS.IP}:3000/reservation/${reservationId}/extend`,
+      { userId: userID }
+    );
+
+    Alert.alert('Reservation Extended', response.data.message);
+    setActiveReservation(response.data.reservation);
+    setReservationEndTime(new Date(response.data.reservation.endTime));
+    fetchStations();
+  } catch (error) {
+    console.error('Error extending reservation:', error);
+    Alert.alert('Error', error.response?.data?.message || 'Failed to extend reservation');
+  }
+};
+  
+
+const freeStation = async (reservationId) => {
+  try {
+    console.log('Calling freeStation with reservationId:', reservationId);
+
+    const response = await axios.patch(
+      `http://${GLOBALS.IP}:3000/reservation/${reservationId}/cancel`,
+      { userId: userID }
+    );
+
+    console.log('Free station response:', response.data);
 
     Alert.alert('Station Freed', response.data.message);
 
-    // Stop the timer and hide it
+    // Clear local reservation data
+    setActiveReservation(null);
     setReservationEndTime(null);
-    setTimeLeft('');
+    setSelectedStation(null);
+    setModalVisible(false);
 
-    fetchStations();
+    // Wait for stations to refresh, and ensure it updates correctly
+    await fetchStations();
+
   } catch (error) {
     console.error('Error freeing station:', error);
-    Alert.alert('Freeing Station Failed', 'An error occurred while freeing the station.');
+
+    let errorMessage = 'Failed to free station';
+
+    if (error.response) {
+      errorMessage = error.response.data.message || errorMessage;
+
+      if (
+        error.response.status === 400 &&
+        error.response.data.message.includes('already ended')
+      ) {
+        // Reservation already expired, clear local state
+        setActiveReservation(null);
+        setReservationEndTime(null);
+        await fetchStations();
+      }
+    }
+
+    Alert.alert('Error', errorMessage);
   }
 };
 
-
-   const extendReservation = async (stationId) => {
-    try {
-      const response = await axios.patch(`http://${GLOBALS.IP}:3000/station/extend/${stationId}`, {
-        userId: userID,
-      });
-      Alert.alert('Reservation Extended', response.data.message);
-      fetchStations();
-    } catch (error) {
-      console.error('Error extending reservation:', error);
-      Alert.alert('Extension Failed', 'An error occurred while extending the reservation.');
-    }
-  };
-  
   const getUserLocation = () => {
     
     setLoadingLocation(true);
@@ -303,26 +331,40 @@ useEffect(() => {
                     <Text style={styles.modalButtonText}>View Stations</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={styles.modalButton}
-                    onPress={() => {
-                        reserveStation(selectedStation._id); // Call your reserve function here
-                    }}
-                >
-                    <Text style={styles.modalButtonText}>Reserve Station</Text>
-                </TouchableOpacity>
-                  <TouchableOpacity
-                  style={styles.modalButton}
-                  onPress={() => extendReservation(selectedStation._id)} // Extend reservation
-                >
-                  <Text style={styles.modalButtonText}>Extend Reservation</Text>
-                </TouchableOpacity>
-                     <TouchableOpacity
-                  style={styles.modalButton}
-                  onPress={() => freeStation(selectedStation._id)} // Free station
-                >
-                  <Text style={styles.modalButtonText}>Free Station</Text>
-                </TouchableOpacity>
+{activeReservation && activeReservation.stationId === selectedStation._id && activeReservation.status === 'active' ? (
+  <>
+    <TouchableOpacity
+      style={styles.modalButton}
+      onPress={() => extendReservation(activeReservation._id)}
+    >
+      <Text style={styles.modalButtonText}>Extend Reservation</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      style={[styles.modalButton, { backgroundColor: '#FF5C5C' }]}
+      onPress={() => freeStation(activeReservation._id)}
+    >
+      <Text style={styles.modalButtonText}>Free Station</Text>
+    </TouchableOpacity>
+  </>
+) : activeReservation && activeReservation.stationId === selectedStation._id && activeReservation.status !== 'active' ? (
+  <Text style={{ marginTop: 10, fontStyle: 'italic', color: 'gray' }}>
+    This station's reservation is not active.
+  </Text>
+) : selectedStation.isReserved ? (
+  <Text style={{ marginTop: 10, fontStyle: 'italic', color: 'gray' }}>
+    This station is already reserved.
+  </Text>
+) : (
+  <TouchableOpacity
+    style={styles.modalButton}
+    onPress={() => reserveStation(selectedStation._id)}
+  >
+    <Text style={styles.modalButtonText}>Reserve Station</Text>
+  </TouchableOpacity>
+)}
+
+                  
                 <TouchableOpacity style={styles.closeModalButton} onPress={closeModal}>
                   <Text style={styles.closeModalText}>Close</Text>
                 </TouchableOpacity>
