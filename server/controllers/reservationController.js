@@ -19,6 +19,11 @@ const createReservation = async (req, res) => {
     if (station.availableSlots <= 0) {
       return res.status(400).json({ message: "No available slots." });
     }
+    // Check if station is already reserved (assuming only 1 slot per station)
+  if (station.isReserved) {
+  return res.status(400).json({ message: "Station already reserved." });
+}
+
 
     const now = new Date();
 
@@ -87,9 +92,12 @@ const createReservation = async (req, res) => {
 
 // Cancel a reservation (manual free)
 const cancelReservation = async (req, res) => {
+  console.log('Request body:', req.body);
+
   const { userId } = req.body;
   const reservationId = req.params.reservationId;
-
+ 
+   console.log(`Cancel request received for reservationId: ${reservationId}, userId: ${userId}`);
   try {
     const reservation = await Reservation.findById(reservationId);
     if (!reservation) return res.status(404).json({ message: "Reservation not found." });
@@ -135,6 +143,7 @@ const expireReservations = async () => {
     const station = await Station.findById(r.stationId);
     if (station) {
       station.availableSlots += 1;
+       station.isReserved = false;
       await station.save();
     }
   }

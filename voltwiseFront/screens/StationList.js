@@ -8,6 +8,8 @@ import GLOBALS from '../global/variables';
 import CustomBottomBar from './user/customBottomBar';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ReserveBtn from './user/ReserveBtn';
+import CancelBtn from './user/CancelBtn';
 
 const StationList = () => {
   const [stations, setStations] = useState([]);
@@ -17,50 +19,30 @@ const StationList = () => {
 
   const navigation = useNavigation();
 
-  useEffect(() => {
-    const fetchStations = async () => {
-      try {
-        const response = await axios.get(`http://${GLOBALS.IP}:3000/station`);
-        setStations(response.data);
-      } catch (error) {
-        Alert.alert('Error', 'Failed to load stations');
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
+const fetchStations = async () => {
+  try {
+    const response = await axios.get(`http://${GLOBALS.IP}:3000/station`);
+    setStations(response.data);
+    console.log('Fetched stations:', response.data);
+  } catch (error) {
+    Alert.alert('Error', 'Failed to load stations');
+    console.error(error);
+  } finally {
+    setLoading(false);
+  }
+};
 
-    fetchStations();
-  }, []);
+useEffect(() => {
+  fetchStations();
+}, []);
 
   const handleViewDetails = (station) => {
     setSelectedStation(station);
+    console.log('Selected station:', station);
     setModalVisible(true);
   };
 
-  // Updated reservation function to use /station/:stationId/reserve
- const reserveStation = async (stationId) => {
-  try {
-    const response = await axios.post(
-      `http://${GLOBALS.IP}:3000/reservation/${stationId}/reserve`,
-      { userId: userID }
-    );
-
-    Alert.alert('Reservation Successful', response.data.message);
-    // Set both the active reservation and end time
-    setActiveReservation(response.data.reservation);
-    console.log('Active reservation state:', response.data.reservation);
-    setReservationEndTime(new Date(response.data.reservation.endTime));
-    fetchStations(); // Refresh station data
-  } catch (error) {
-    console.error('Error reserving station:', error);
-    if (error.response) {
-      Alert.alert('Reservation Failed', error.response.data.message || 'Failed to reserve station');
-    } else {
-      Alert.alert('Error', 'Could not connect to server');
-    }
-  }
-};
+  
 
 
   const renderItem = ({ item }) => (
@@ -78,12 +60,9 @@ const StationList = () => {
           <Text style={styles.buttonText}>View Details</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#28a745', marginTop: 8 }]}
-          onPress={() => reserveStation(item._id)}
-        >
-          <Text style={styles.buttonText}>Reserve</Text>
-        </TouchableOpacity>
+        <ReserveBtn stationId={item._id} fetchStations={fetchStations} />
+     
+
       </View>
     </View>
   );
@@ -141,7 +120,7 @@ const StationList = () => {
                   <Text style={styles.detailText}>📍 Location: {selectedStation.location}</Text>
                   <Text style={styles.detailText}>🔌 Plug Type: {selectedStation.plugType}</Text>
                   <Text style={styles.detailText}>⚡ Capacity: {selectedStation.capacity}</Text>
-                  <Text style={styles.detailText}>🛠️ State: {selectedStation.state}</Text>
+                  <Text style={styles.detailText}>🛠️ reserved: {selectedStation.isReserved ? 'Yes' : 'No'}</Text>
                   <Text style={styles.detailText}>⏱️ Charging Time: {selectedStation.chargingTime}</Text>
                   <Text style={styles.detailText}>🔋 Kilowatt: {selectedStation.kilowatt} kW</Text>
                   <Text style={styles.detailText}>🏷️ Marque: {selectedStation.marque}</Text>

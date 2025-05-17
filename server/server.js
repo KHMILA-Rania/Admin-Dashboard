@@ -16,6 +16,7 @@ import { expireReservations } from './controllers/reservationController.js';
 import cors from 'cors';
 dotenv.config();
 const app = express();
+app.use(express.json());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

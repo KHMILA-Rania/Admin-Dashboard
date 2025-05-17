@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, SafeAreaView } from 'react-native';
 import GLOBALS from '../../global/variables';
 import { useRoute } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import CancelBtn from './CancelBtn';  // Import your CancelBtn component
 
 const UserReservations = () => {
   const [reservations, setReservations] = useState([]);
@@ -12,30 +12,37 @@ const UserReservations = () => {
   const route = useRoute();
   const userId = route?.params?.userId;
 
-  useEffect(() => {
-    const fetchReservations = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`http://${GLOBALS.IP}:3000/reservation/user/${userId}`);
-        if (!response.ok) throw new Error('Failed to fetch reservations');
-        const data = await response.json();
-        console.log('Raw fetch response length:', data.length || (data.reservations ? data.reservations.length : 0));
-        console.log('First reservation item:', data[0] || (data.reservations ? data.reservations[0] : null));
-
-        setReservations(Array.isArray(data) ? data : data.reservations || []);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (userId) {
-      fetchReservations();
-    } else {
+  // Fetch reservations for the user
+  const fetchReservations = async () => {
+    if (!userId) {
+      setError('User ID is missing');
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      const response = await fetch(`http://${GLOBALS.IP}:3000/reservation/user/${userId}`);
+      if (!response.ok) throw new Error('Failed to fetch reservations');
+      const data = await response.json();
+      const reservationsData = Array.isArray(data) ? data : data.reservations || [];
+      reservationsData.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+      setReservations(reservationsData);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchReservations();
   }, [userId]);
+
+  // Called after successful cancel to refresh list
+  const onCancelSuccess = () => {
+    fetchReservations();
+  };
 
   if (loading) {
     return (
@@ -68,7 +75,7 @@ const UserReservations = () => {
       <Text style={{ textAlign: 'center', marginTop: 10 }}>Reservation List</Text>
       <FlatList
         data={reservations}
-        keyExtractor={(item) => item._id}
+        keyExtractor={(item) => item._id ?? Math.random().toString()}
         renderItem={({ item }) => {
           const statusColor =
             item.status === 'active' ? 'green' :
@@ -83,6 +90,14 @@ const UserReservations = () => {
               </Text>
               <Text>From: {formatDateTime(item.startTime)}</Text>
               <Text>To: {formatDateTime(item.endTime)}</Text>
+
+              {item.status === 'active' && (
+                <CancelBtn
+                  reservationId={item._id}
+                  userId={userId}              // Pass userId here
+                  onCancelSuccess={onCancelSuccess}
+                />
+              )}
             </View>
           );
         }}
