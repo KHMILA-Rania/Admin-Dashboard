@@ -113,7 +113,7 @@ const sendPasswordReset= async(req,res)=>{
             {expiresIn: '30m'}
         );
 
-        const resetLink=`http://localhost:3000/auth/reset-password/${resetToken}`;
+        const resetLink=`http://102.25.110.228:3000/auth/reset-password/${resetToken}`;
         
         
         const transporter=nodemailer.createTransport({
@@ -133,7 +133,7 @@ const sendPasswordReset= async(req,res)=>{
         const mailOptions={
             from : {
                 name:"VoltWise Solutions",
-                adress: process.env.SMPTP_USER},
+                adress: process.env.SMTP_USER},
             to: email,
             subject: 'Password Reset',
             html: `

@@ -134,17 +134,28 @@ const cancelReservation = async (req, res) => {
 // Pseudo cron logic
 const expireReservations = async () => {
   const now = new Date();
-  const expiredReservations = await Reservation.find({ status: 'active', endTime: { $lte: now } });
 
-  for (const r of expiredReservations) {
-    r.status = 'expired';
-    await r.save();
+  // Calculate the time 30 minutes after startTime for each reservation
+  // Since MongoDB can't do that directly with Mongoose queries easily,
+  // we fetch all active reservations and filter in JS
 
-    const station = await Station.findById(r.stationId);
-    if (station) {
-      station.availableSlots += 1;
-       station.isReserved = false;
-      await station.save();
+  const activeReservations = await Reservation.find({ status: 'active' });
+
+  for (const r of activeReservations) {
+    const expirationTime = new Date(r.startTime.getTime() + 30 * 60 * 1000); // startTime + 30 minutes
+
+    if (now >= expirationTime) {
+      // Expire the reservation
+      r.status = 'expired';
+      await r.save();
+
+      // Update the station availability
+      const station = await Station.findById(r.stationId);
+      if (station) {
+        station.availableSlots += 1;
+        station.isReserved = false;
+        await station.save();
+      }
     }
   }
 };

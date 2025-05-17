@@ -4,14 +4,14 @@ import { Text, View,TextInput, TouchableOpacity, StyleSheet ,Alert, ScrollView }
 import { useNavigation } from "@react-navigation/native";
 import axios from 'axios';
 import style from "./style";
-
+import GLOBALS from "../global/variables";
 function SignUp(){
     const navigation = useNavigation();
     const [email, setEmail] = useState("");
     const [emailError, setEmailError] = useState("");
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
-     const [adress, setAdress] = useState('');
+     const [address, setAddress] = useState('');
      const [phoneNumber, setPhoneNumber] = useState('');
      const [age, setAge] = useState('');
      const [vehicleType, setVehicleType] = useState('');
@@ -31,7 +31,7 @@ function SignUp(){
       const handleSubmit = async () => {
         try {
           // Check if all fields are filled
-          if (!name || !email || !password || !adress || !phoneNumber || !age) {
+          if (!name || !email || !password || !address || !phoneNumber || !age) {
             Alert.alert('Please fill in all fields');
             return;
           }
@@ -41,7 +41,7 @@ function SignUp(){
             name,
             email,
             password,
-            adress,
+            address,
             phoneNumber,
             age,
             vehicleType,
@@ -111,15 +111,15 @@ function SignUp(){
           secureTextEntry
         />
         </View>
-        <Text style={styles.InputLabel}>Adress</Text>
+        <Text style={styles.InputLabel}>Address</Text>
 
         <View style={style.action}>
         <TextInput
           style={style.textInput}
           placeholder="Address"
           placeholderTextColor={'gray'}
-          value={adress}
-          onChangeText={setAdress}
+          value={address}
+          onChangeText={setAddress}
         />
       </View>
         <Text style={styles.InputLabel}>Phone number</Text>

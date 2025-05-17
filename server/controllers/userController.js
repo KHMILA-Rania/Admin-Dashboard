@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import User from '../models/user.js';
-
+import bcrypt from 'bcrypt';
 const getAllUsers=async (req,res)=>{
 
     try{
@@ -39,25 +39,33 @@ const getUserById=async (req,res)=>{
     }
 };
 
-const updateUser= async (req,res)=>{
+
+
+const updateUser = async (req, res) => {
     const userId = req.params.id;
     const user = await User.findById(userId);
 
     if (!user) {
         return res.status(404).json({ message: "User not found" });
     }
-    try{
-        const updateData = req.body;
+
+    try {
+        const updateData = { ...req.body };
+
+        // Check if the password is being updated
+        if (updateData.password) {
+            const salt = await bcrypt.genSalt(10);
+            updateData.password = await bcrypt.hash(updateData.password, salt);
+        }
 
         const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
-    
+
         return res.status(200).json({ message: "User updated successfully", user: updatedUser });
-    }
-    catch(error){
+    } catch (error) {
         console.log(error);
         return res.status(500).send("error");
     }
-}
+};
 
 
 export  {getAllUsers,

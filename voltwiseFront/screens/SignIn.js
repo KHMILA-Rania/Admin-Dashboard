@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+
 import { IconButton } from 'react-native-paper';
 import {useNavigation} from '@react-navigation/native';
 import style from './style';
@@ -22,6 +23,8 @@ function SignIn({props}) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [hidePassword, setHidePassword] = useState(true);
+
   const goHome=()=>{
     navigation.navigate('Home');
   }
@@ -114,6 +117,7 @@ function SignIn({props}) {
             style={style.logo}
             source={require('../assets/voltwiselogo.png')}
           />
+      
         </View>
         <View style={style.loginContainer}>
           <Text style={style.text_header}>Welcome Back</Text>
@@ -136,10 +140,16 @@ function SignIn({props}) {
             <FontAwesome name="lock" color="#420475" style={style.smallIcon} />
             <TextInput
               placeholder="Password"
-              style={style.textInput}
+              secureTextEntry={true}
+              style={[style.textInput, {flex: 1, paddingLeft: 10}]}
               placeholderTextColor="gray" 
               onChange={e => setPassword(e.nativeEvent.text)}
             />
+            
+            <TouchableOpacity onPress={
+              () => setHidePassword(!hidePassword)}>
+              <Feather name={hidePassword ? 'eye-off' : 'eye'} size={20} color="gray" />
+            </TouchableOpacity>
           </View>
           <View
             style={{

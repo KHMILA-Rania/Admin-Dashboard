@@ -21,6 +21,7 @@ const UserProfile = () => {
     age: '',
     vehicleType: '',
     plugType: '',
+    password:''
   });
 
   useEffect(() => {
@@ -52,6 +53,7 @@ const UserProfile = () => {
         setFormData({
           name: response.data.user.name || '',
           email: response.data.user.email || '',
+          password:  '',
           address: response.data.user.address || '',
           phoneNumber: response.data.user.phoneNumber || '',
           age: response.data.user.age ? response.data.user.age.toString() : '',
@@ -142,6 +144,12 @@ const UserProfile = () => {
           value={formData.email}
           editable={isEditing}
           onChangeText={value => handleInputChange('email', value)}
+        />
+         <EditableRow
+          label="Password"
+          value={isEditing ? formData.password : '********'}
+          editable={isEditing}
+          onChangeText={value => handleInputChange('password', value)}
         />
         <EditableRow
           label="Address"

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, TextInput, Button, Text, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
 import { useRoute, useNavigation } from '@react-navigation/native'; // For handling navigation and getting the token
+import GLOBALS from '../global/variables';
 
 const newPassword = () => {
   const route = useRoute(); // To get the token from the URL params
@@ -25,7 +26,7 @@ const newPassword = () => {
 
     try {
       const response = await axios.post(
-        `http://localhost:3000/auth/reset-password/${token}`,
+        `http://${GLOBALS.IP}:3000/auth/reset-password/${token}`,
         { password }
       );
 

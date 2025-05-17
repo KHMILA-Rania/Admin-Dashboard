@@ -2,6 +2,7 @@ import React , {useState} from "react";
 import { Text, View ,TextInput ,StyleSheet,TouchableOpacity, Alert,ActivityIndicator} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import style from "./style";
+import GLOBALS from "../global/variables";
 function ResetPassword(){
     const navigation = useNavigation();
     const [email, setEmail] = useState("");
@@ -17,7 +18,7 @@ function ResetPassword(){
 
         try {
             setLoading(true);
-            const response = await fetch("http://192.168.1.177:3000/auth/sendEmail", {
+            const response = await fetch(`http://${GLOBALS.IP}:3000/auth/sendEmail`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email }),

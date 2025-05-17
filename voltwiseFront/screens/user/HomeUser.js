@@ -18,6 +18,7 @@ const HomeUser = ({ navigation }) => {
   const [stations, setStations] = useState([]);
   const [loadingStations, setLoadingStations] = useState(true);
   const mapRef = useRef(null);
+  const [highlightAvailable, setHighlightAvailable] = useState(false);
  
   const [region, setRegion] = useState({
     latitude: 36.895666,
@@ -26,8 +27,8 @@ const HomeUser = ({ navigation }) => {
     longitudeDelta: 0.01,
   });
   const [activeReservation, setActiveReservation] = useState(null);
-const [reservationEndTime, setReservationEndTime] = useState(null);
-const [timeLeft, setTimeLeft] = useState('');
+  const [reservationEndTime, setReservationEndTime] = useState(null);
+  const [timeLeft, setTimeLeft] = useState('');
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [selectedStation, setSelectedStation] = useState(null);
   const [modalVisible, setModalVisible] = useState(false); // Modal visibility state
@@ -81,119 +82,116 @@ const [timeLeft, setTimeLeft] = useState('');
     }
   };
 
-const reserveStation = async (stationId) => {
-  try {
-    const response = await axios.post(
-      `http://${GLOBALS.IP}:3000/reservation/${stationId}/reserve`,
-      { userId: userID }
-    );
+  const reserveStation = async (stationId) => {
+    try {
+      const response = await axios.post(
+        `http://${GLOBALS.IP}:3000/reservation/${stationId}/reserve`,
+        { userId: userID }
+      );
 
-    Alert.alert('Reservation Successful', response.data.message);
-    // Set both the active reservation and end time
-    setActiveReservation(response.data.reservation);
-    console.log('Active reservation state:', response.data.reservation);
-    setReservationEndTime(new Date(response.data.reservation.endTime));
-    fetchStations(); // Refresh station data
-  } catch (error) {
-    console.error('Error reserving station:', error);
-    if (error.response) {
-      Alert.alert('Reservation Failed', error.response.data.message || 'Failed to reserve station');
-    } else {
-      Alert.alert('Error', 'Could not connect to server');
-    }
-  }
-};
-
-
-
-
-useEffect(() => {
-  let timer;
-
-  if (reservationEndTime) {
-    timer = setInterval(() => {
-      const now = new Date();
-      const diff = reservationEndTime - now;
-
-      if (diff <= 0) {
-        clearInterval(timer);
-        setTimeLeft('Expired');
-        setActiveReservation(null);
-        setReservationEndTime(null);
-        fetchStations(); // Refresh to update station availability
+      Alert.alert('Reservation Successful', response.data.message);
+      // Set both the active reservation and end time
+      setActiveReservation(response.data.reservation);
+      console.log('Active reservation state:', response.data.reservation);
+      setReservationEndTime(new Date(response.data.reservation.endTime));
+      fetchStations(); // Refresh station data
+    } catch (error) {
+      console.error('Error reserving station:', error);
+      if (error.response) {
+        Alert.alert('Reservation Failed', error.response.data.message || 'Failed to reserve station');
       } else {
-        const minutes = Math.floor(diff / 60000);
-        const seconds = Math.floor((diff % 60000) / 1000);
-        setTimeLeft(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+        Alert.alert('Error', 'Could not connect to server');
       }
-    }, 1000);
-  }
+    }
+  };
 
-  return () => clearInterval(timer);
-}, [reservationEndTime]);
+  useEffect(() => {
+    let timer;
 
-   const extendReservation = async (reservationId) => {
-  try {
-    const response = await axios.patch(
-      `http://${GLOBALS.IP}:3000/reservation/${reservationId}/extend`,
-      { userId: userID }
-    );
+    if (reservationEndTime) {
+      timer = setInterval(() => {
+        const now = new Date();
+        const diff = reservationEndTime - now;
 
-    Alert.alert('Reservation Extended', response.data.message);
-    setActiveReservation(response.data.reservation);
-    setReservationEndTime(new Date(response.data.reservation.endTime));
-    fetchStations();
-  } catch (error) {
-    console.error('Error extending reservation:', error);
-    Alert.alert('Error', error.response?.data?.message || 'Failed to extend reservation');
-  }
-};
+        if (diff <= 0) {
+          clearInterval(timer);
+          setTimeLeft('Expired');
+          setActiveReservation(null);
+          setReservationEndTime(null);
+          fetchStations(); // Refresh to update station availability
+        } else {
+          const minutes = Math.floor(diff / 60000);
+          const seconds = Math.floor((diff % 60000) / 1000);
+          setTimeLeft(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+        }
+      }, 1000);
+    }
+
+    return () => clearInterval(timer);
+  }, [reservationEndTime]);
+
+  const extendReservation = async (reservationId) => {
+    try {
+      const response = await axios.patch(
+        `http://${GLOBALS.IP}:3000/reservation/${reservationId}/extend`,
+        { userId: userID }
+      );
+
+      Alert.alert('Reservation Extended', response.data.message);
+      setActiveReservation(response.data.reservation);
+      setReservationEndTime(new Date(response.data.reservation.endTime));
+      fetchStations();
+    } catch (error) {
+      console.error('Error extending reservation:', error);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to extend reservation');
+    }
+  };
   
 
-const freeStation = async (reservationId) => {
-  try {
-    console.log('Calling freeStation with reservationId:', reservationId);
+  const freeStation = async (reservationId) => {
+    try {
+      console.log('Calling freeStation with reservationId:', reservationId);
 
-    const response = await axios.patch(
-      `http://${GLOBALS.IP}:3000/reservation/${reservationId}/cancel`,
-      { userId: userID }
-    );
+      const response = await axios.patch(
+        `http://${GLOBALS.IP}:3000/reservation/${reservationId}/cancel`,
+        { userId: userID }
+      );
 
-    console.log('Free station response:', response.data);
+      console.log('Free station response:', response.data);
 
-    Alert.alert('Station Freed', response.data.message);
+      Alert.alert('Station Freed', response.data.message);
 
-    // Clear local reservation data
-    setActiveReservation(null);
-    setReservationEndTime(null);
-    setSelectedStation(null);
-    setModalVisible(false);
+      // Clear local reservation data
+      setActiveReservation(null);
+      setReservationEndTime(null);
+      setSelectedStation(null);
+      setModalVisible(false);
 
-    // Wait for stations to refresh, and ensure it updates correctly
-    await fetchStations();
+      // Wait for stations to refresh, and ensure it updates correctly
+      await fetchStations();
 
-  } catch (error) {
-    console.error('Error freeing station:', error);
+    } catch (error) {
+      console.error('Error freeing station:', error);
 
-    let errorMessage = 'Failed to free station';
+      let errorMessage = 'Failed to free station';
 
-    if (error.response) {
-      errorMessage = error.response.data.message || errorMessage;
+      if (error.response) {
+        errorMessage = error.response.data.message || errorMessage;
 
-      if (
-        error.response.status === 400 &&
-        error.response.data.message.includes('already ended')
-      ) {
-        // Reservation already expired, clear local state
-        setActiveReservation(null);
-        setReservationEndTime(null);
-        await fetchStations();
+        if (
+          error.response.status === 400 &&
+          error.response.data.message.includes('already ended')
+        ) {
+          // Reservation already expired, clear local state
+          setActiveReservation(null);
+          setReservationEndTime(null);
+          await fetchStations();
+        }
       }
-    }
 
-    Alert.alert('Error', errorMessage);
-  }
-};
+      Alert.alert('Error', errorMessage);
+    }
+  };
 
   const getUserLocation = () => {
     
@@ -243,14 +241,54 @@ const freeStation = async (reservationId) => {
     setModalVisible(false); // Close the modal
   };
 
+  const toggleHighlightAvailable = () => {
+    setHighlightAvailable(!highlightAvailable);
+    
+    // If turning on highlight, zoom out to show all of Tunisia
+    if (!highlightAvailable) {
+      // Set region to cover all of Tunisia
+      setRegion({
+        latitude: 34.0, // Approximate center latitude of Tunisia
+        longitude: 9.0, // Approximate center longitude of Tunisia
+        latitudeDelta: 6.0, // Wider zoom to show the whole country
+        longitudeDelta: 6.0,
+      });
+    } else {
+      // If turning off highlight, return to user location
+      getUserLocation();
+    }
+  };
+
+  const getMarkerStyle = (station) => {
+    // If highlight is on AND station is available
+    if (highlightAvailable && !station.isReserved) {
+      return {
+        backgroundColor: '#4CAF50', // Bright green for available stations when highlighted
+        padding: 8,
+        borderRadius: 20,
+        borderColor: 'white',
+        borderWidth: 2,
+      };
+    }
+    
+    // Default style based on reservation status
+    return {
+      backgroundColor: station.isReserved ? '#FF5C5C' : 'blue', // Red for reserved, blue for available
+      padding: 8,
+      borderRadius: 20,
+      borderColor: 'white',
+      borderWidth: 2,
+    };
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         {reservationEndTime && (
-  <View style={styles.timerBanner}>
-    <Text style={styles.timerText}>Time left: {timeLeft}</Text>
-  </View>
-)}
+          <View style={styles.timerBanner}>
+            <Text style={styles.timerText}>Time left: {timeLeft}</Text>
+          </View>
+        )}
         <Image source={require('../../assets/logop-blue.png')} style={styles.logo} />
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutText}>Logout</Text>
@@ -262,7 +300,24 @@ const freeStation = async (reservationId) => {
       </View>
 
       <View style={{ flex: 1 }}>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity 
+            style={[
+              styles.actionButton, 
+              highlightAvailable ? styles.highlightActiveButton : styles.actionButton
+            ]} 
+            onPress={toggleHighlightAvailable}
+          >
+            <Text style={styles.buttonText}>
+              {highlightAvailable ? "Hide Available" : "Show Available"}
+            </Text>
+          </TouchableOpacity>
+
+          
+        </View>
+        
         <MapView
+          ref={mapRef}
           provider={PROVIDER_GOOGLE}
           style={styles.map}
           region={region}
@@ -284,25 +339,15 @@ const freeStation = async (reservationId) => {
                 latitude: station.latitude,
                 longitude: station.longitude,
               }}
-              pinColor="green"
+              pinColor={station.isReserved ? "red" : "green"}
               onPress={() => handleStationPress(station)} // Show modal when pressed
             >
-              <View style={{
-                backgroundColor: 'blue',
-                padding: 8,
-                borderRadius: 20,
-                borderColor: 'white',
-                borderWidth: 2,
-              }}>
+              <View style={getMarkerStyle(station)}>
                 <Text style={{color: 'white', fontWeight: 'bold'}}>⚡</Text>
               </View>
             </Marker>
           ))}
         </MapView>
-
-        <TouchableOpacity style={styles.refreshButton} onPress={getUserLocation}>
-          <Text style={styles.refreshButtonText}>Refresh Location</Text>
-        </TouchableOpacity>
 
         {/* Modal for displaying station information */}
         {selectedStation && (
@@ -318,7 +363,7 @@ const freeStation = async (reservationId) => {
                 <Text style={styles.modalDescription}>{`Location: ${selectedStation.location}`}</Text>
                 <Text style={styles.modalDescription}>{`Capacity: ${selectedStation.capacity}`}</Text>
                 <Text style={styles.modalDescription}>{`Available Slots: ${selectedStation.availableSlots}`}</Text>
-                <Text style={styles.modalDescription}>{`Reserved ?: ${selectedStation.isReserved}`}</Text>
+                <Text style={styles.modalDescription}>{`Reserved ?: ${selectedStation.isReserved ? 'Yes' : 'No'}`}</Text>
                 <Text style={styles.modalDescription}>{`State : ${selectedStation.state}`}</Text>
                 
                 <TouchableOpacity
@@ -331,40 +376,39 @@ const freeStation = async (reservationId) => {
                     <Text style={styles.modalButtonText}>View Stations</Text>
                 </TouchableOpacity>
 
-{activeReservation && activeReservation.stationId === selectedStation._id && activeReservation.status === 'active' ? (
-  <>
-    <TouchableOpacity
-      style={styles.modalButton}
-      onPress={() => extendReservation(activeReservation._id)}
-    >
-      <Text style={styles.modalButtonText}>Extend Reservation</Text>
-    </TouchableOpacity>
+                {activeReservation && activeReservation.stationId === selectedStation._id && activeReservation.status === 'active' ? (
+                  <>
+                    <TouchableOpacity
+                      style={styles.modalButton}
+                      onPress={() => extendReservation(activeReservation._id)}
+                    >
+                      <Text style={styles.modalButtonText}>Extend Reservation</Text>
+                    </TouchableOpacity>
 
-    <TouchableOpacity
-      style={[styles.modalButton, { backgroundColor: '#FF5C5C' }]}
-      onPress={() => freeStation(activeReservation._id)}
-    >
-      <Text style={styles.modalButtonText}>Free Station</Text>
-    </TouchableOpacity>
-  </>
-) : activeReservation && activeReservation.stationId === selectedStation._id && activeReservation.status !== 'active' ? (
-  <Text style={{ marginTop: 10, fontStyle: 'italic', color: 'gray' }}>
-    This station's reservation is not active.
-  </Text>
-) : selectedStation.isReserved ? (
-  <Text style={{ marginTop: 10, fontStyle: 'italic', color: 'gray' }}>
-    This station is already reserved.
-  </Text>
-) : (
-  <TouchableOpacity
-    style={styles.modalButton}
-    onPress={() => reserveStation(selectedStation._id)}
-  >
-    <Text style={styles.modalButtonText}>Reserve Station</Text>
-  </TouchableOpacity>
-)}
+                    <TouchableOpacity
+                      style={[styles.modalButton, { backgroundColor: '#FF5C5C' }]}
+                      onPress={() => freeStation(activeReservation._id)}
+                    >
+                      <Text style={styles.modalButtonText}>Free Station</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : activeReservation && activeReservation.stationId === selectedStation._id && activeReservation.status !== 'active' ? (
+                  <Text style={{ marginTop: 10, fontStyle: 'italic', color: 'gray' }}>
+                    This station's reservation is not active.
+                  </Text>
+                ) : selectedStation.isReserved ? (
+                  <Text style={{ marginTop: 10, fontStyle: 'italic', color: 'gray' }}>
+                    This station is already reserved.
+                  </Text>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.modalButton}
+                    onPress={() => reserveStation(selectedStation._id)}
+                  >
+                    <Text style={styles.modalButtonText}>Reserve Station</Text>
+                  </TouchableOpacity>
+                )}
 
-                  
                 <TouchableOpacity style={styles.closeModalButton} onPress={closeModal}>
                   <Text style={styles.closeModalText}>Close</Text>
                 </TouchableOpacity>
@@ -381,23 +425,25 @@ const freeStation = async (reservationId) => {
 
 const styles = StyleSheet.create({
   timerBanner: {
-  backgroundColor: '#4CAF50',
-  paddingVertical: 10,
-  alignItems: 'center',
-  justifyContent: 'center',
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  zIndex: 1000,
-},
-timerText: {
-  color: 'white',
-  fontSize: 16,
-  fontWeight: 'bold',
-},
-
-  container: { flex: 1, backgroundColor: '#E4F4FF' },
+    backgroundColor: '#4CAF50',
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+  },
+  timerText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#E4F4FF' 
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -405,29 +451,75 @@ timerText: {
     paddingHorizontal: 20,
     paddingTop: height * 0.05,
   },
-  logo: { width: 50, height: 50 },
+  logo: { 
+    width: 50, 
+    height: 50 
+  },
   logoutButton: {
     backgroundColor: '#39B2DB',
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 30,
   },
-  logoutText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
-  titles: { alignItems: 'center', marginTop: 0 },
-  title: { fontSize: 26, fontWeight: 'bold', color: '#223958' },
-  map: { flex: 1 },
-  refreshButton: {
-    alignSelf: 'center',
+  logoutText: { 
+    color: 'white', 
+    fontSize: 16, 
+    fontWeight: 'bold' 
+  },
+  titles: { 
+    alignItems: 'center', 
+    marginTop: 0 
+  },
+  title: { 
+    fontSize: 26, 
+    fontWeight: 'bold', 
+    color: '#223958' 
+  },
+  map: { 
+    flex: 1 
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    marginVertical: 10,
+    position: 'absolute',
+    bottom: 70,
+    left: 0,
+    right: 0,
+    zIndex: 999,
+  },
+  actionButton: {
     backgroundColor: '#2D9CDB',
     paddingVertical: 12,
-    paddingHorizontal: 30,
+    paddingHorizontal: 15,
     borderRadius: 30,
-    marginVertical: 10,
+    flex: 0.48,
+    alignItems: 'center',
   },
-  refreshButtonText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
-  calloutView: { width: 150 },
-  calloutTitle: { fontWeight: 'bold', fontSize: 14 },
-  calloutDescription: { fontSize: 12 },
+  highlightActiveButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderRadius: 30,
+    flex: 0.48,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  calloutView: { 
+    width: 150 
+  },
+  calloutTitle: { 
+    fontWeight: 'bold', 
+    fontSize: 14 
+  },
+  calloutDescription: { 
+    fontSize: 12 
+  },
 
   // Modal Styles
   modalContainer: {
@@ -472,13 +564,13 @@ timerText: {
     paddingHorizontal: 20,
     borderRadius: 20,
     marginVertical: 5,
-},
-modalButtonText: {
+  },
+  modalButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
-},
+  },
 });
 
 export default HomeUser;
