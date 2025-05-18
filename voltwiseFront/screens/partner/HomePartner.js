@@ -8,24 +8,83 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import BottomNavBar from './BottomNavBar'; // Import the BottomNavBar component
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useState,useEffect } from 'react';
 
 const HomePartner = () => {
+    const [userType, setUserType] = useState('user');
+     const [userName, setUserName] = useState('User');
+      const [userID, setUserID] = useState('');
+
+      const currentDate = new Date();
+      const formattedDate = currentDate.toLocaleString('en-US', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+    });
   const handleTabPress = (tabKey) => {
-    console.log('Tab pressed:', tabKey);
-    // Handle navigation logic here
-    // Example: navigation.navigate(tabKey);
+    console.log('Tab pressed:', tabKey); 
   };
+  const navigation = useNavigation();
+  const handleLogout = async () => {
+       try {
+         await AsyncStorage.clear();
+         navigation.reset({
+           index: 0,
+           routes: [{ name: 'SignIn' }],
+         });
+       } catch (error) {
+         console.error('Error during logout:', error);
+       }
+     };
+
+
+      useEffect(() => {
+    const initialize = async () => {
+      try {
+        const storedToken = await AsyncStorage.getItem('token');
+        const storedUserType = await AsyncStorage.getItem('userType');
+        const storedUserId = await AsyncStorage.getItem('userId');
+        setUserID(storedUserId);
+        console.log('User ID:', storedUserId);
+
+        if (storedToken) {
+          const userData = JSON.parse(storedToken);
+          setUserName(userData?.name || 'User');
+        }
+        if (storedUserType) {
+          setUserType(storedUserType);
+        }
+
+      
+   
+       
+      } catch (error) {
+        console.error('Error loading user data:', error);
+      }
+    };
+
+    initialize();
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
+        <TouchableOpacity style={styles.backButton}
+        onPress={()=>handleLogout()}>
+          <Text style={styles.backArrow}>Logout</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>EARNINGS</Text>
+   
+                <Text style={styles.title}>Welcome, {userName}!</Text>
+            
         <TouchableOpacity style={styles.refreshButton}>
           <Text style={styles.refreshIcon}>↻</Text>
         </TouchableOpacity>
@@ -33,7 +92,7 @@ const HomePartner = () => {
 
       <ScrollView style={styles.content}>
         {/* Last Update */}
-        <Text style={styles.lastUpdate}>Last Update: 28 Jul, 2024, 11:50 AM</Text>
+        <Text style={styles.lastUpdate}> Date: {formattedDate}</Text>
 
         {/* Earnings Cards */}
         <View style={styles.earningsSection}>
@@ -174,10 +233,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   lastUpdate: {
+   fontSize: 14,
     color: '#666',
-    fontSize: 12,
-    marginTop: 15,
-    marginBottom: 20,
+    marginTop: 10,
+    paddingBottom:20
   },
   earningsSection: {
     marginBottom: 20,

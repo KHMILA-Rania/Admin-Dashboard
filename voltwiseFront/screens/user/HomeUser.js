@@ -222,15 +222,11 @@ const HomeUser = ({ navigation }) => {
 
   const handleStationPress = (station) => {
     setSelectedStation(station);
-    setModalVisible(true); // Show modal on station press
+    setModalVisible(true);
   };
 
   const handleLogout = async () => {
     try {
-      
-     
-      
-
 
       await AsyncStorage.clear();
       navigation.reset({

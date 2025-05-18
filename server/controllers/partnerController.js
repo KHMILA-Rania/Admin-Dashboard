@@ -38,20 +38,36 @@ const deletePartner=async (req,res)=>{
     }
 };
 
-const updatePartner=async (req,res)=>{
-    try{
-        const userID=req.params.id;
-        const updateData=req.body;
-        const selecteduser=await Partner.findById(userID)
-        if (!selecteduser) {
+const updatePartner = async (req, res) => {
+    try {
+        const userID = req.params.id;
+        const updateData = req.body;
+
+        const selectedUser = await Partner.findById(userID);
+        if (!selectedUser) {
             return res.status(404).json({ message: "User not found" });
         }
-        
-        const updatedUser = await Partner.findByIdAndUpdate(userID, updateData, { new: true });
-        return res.status(200).json({ message: "partner updated successfully", user: updatedUser });
-    }
-    catch(error){
-        res.status(500).json({error: error.message})
+
+        // Prepare updated fields
+        const safeUpdate = {
+            name: updateData.name || selectedUser.name,
+            email: updateData.email || selectedUser.email,
+            adress: updateData.adress || selectedUser.adress,
+            phone: updateData.phone || selectedUser.phone,
+            role: updateData.role || selectedUser.role,
+        };
+
+        // If a new password is provided and not empty, hash it
+        if (updateData.password && updateData.password.trim() !== "") {
+            const hashedPassword = await bcrypt.hash(updateData.password, 10);
+            safeUpdate.password = hashedPassword;
+        }
+
+        const updatedUser = await Partner.findByIdAndUpdate(userID, safeUpdate, { new: true });
+        return res.status(200).json({ message: "Partner updated successfully", user: updatedUser });
+
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 };
 
