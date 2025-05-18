@@ -44,53 +44,77 @@ function SignIn({props}) {
 
   
 
-  const HandleSubmit = async () => {
-    try {
+const HandleSubmit = async () => {
+  try {
+    const userData = {
+      email: email.trim(),
+      password: password.trim(),
+    };
+
+    const res = await axios.post(`http://${GLOBALS.IP}:3000/auth/login`, userData);
+    console.log('Response Data:', res.data);
+
+    if (res.data.status === 'ok' || res.data.status === 200) {
+      console.log('Logged in successfully');
+      Alert.alert('Logged In Successfully');
+
+      // Store user data
+      await AsyncStorage.setItem('token', JSON.stringify(res.data.data));
+      await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
       
-  
-      const userData = {
-        email: email.trim(),
-        password: password.trim(),
-      };
-  
-      const res = await axios.post(`http://${GLOBALS.IP}:3000/auth/login`, userData);
-      console.log('Response Data:', res.data);
-  
-      if (res.data.status === 'ok' || res.data.status === 200) {
-        console.log('Logged in successfully');
-        Alert.alert('Logged In Successfully');
-  
-        // Ensure token is a string
-        await AsyncStorage.setItem('token', JSON.stringify(res.data.data));
-        await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
-        const userId = res.data.data._id;
-        console.log('User ID:', userId);
-        await AsyncStorage.setItem('userId', userId); 
-        // Extract userType from role array
-        const userType = res.data.data.role?.[0]?.name; // Safe access
-        if (userType) {
-          await AsyncStorage.setItem('userType', userType);
-          console.log('User type stored:', userType);
-        } else {
-          console.warn('User role is missing in response.');
-        }
-  
-       
-  
-        // Navigate after AsyncStorage is updated
+      const userId = res.data.data._id;
+      console.log('User ID:', userId);
+      await AsyncStorage.setItem('userId', userId);
+      
+      // Get account type from response
+      const accountType = res.data.accountType; // 'user' or 'partner'
+      await AsyncStorage.setItem('accountType', accountType);
+      console.log('Account type:', accountType);
+      
+      // Extract role info as before
+      const userType = res.data.data.role?.[0]?.name; // Safe access
+      if (userType) {
+        await AsyncStorage.setItem('userType', userType);
+        console.log('User type stored:', userType);
+      } else {
+        console.warn('User role is missing in response.');
+      }
+
+      // Navigate based on account type
+      if (accountType === 'partner') {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'HomePartner' }],
+        });
+      } else {
+        // Default to HomeUser for regular users
         navigation.reset({
           index: 0,
           routes: [{ name: 'HomeUser' }],
         });
-      } else {
-        console.log('Login failed');
-        Alert.alert('Login failed. Please check your credentials.');
       }
-    } catch (err) {
-      console.error('Error during login:', err);
-      Alert.alert('An error occurred during login. Please try again.');
+    } else {
+      console.log('Login failed');
+      Alert.alert('Login failed. Please check your credentials.');
     }
-  };
+  } catch (err) {
+    console.error('Error during login:', err);
+    
+    // More detailed error handling
+    if (err.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      const errorMessage = err.response.data || 'Login failed. Please check your credentials.';
+      Alert.alert('Login Error', errorMessage);
+    } else if (err.request) {
+      // The request was made but no response was received
+      Alert.alert('Network Error', 'Could not connect to the server. Please check your internet connection.');
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      Alert.alert('Error', 'An error occurred during login. Please try again.');
+    }
+  }
+};
   
   
 

@@ -4,6 +4,9 @@ import User from '../models/user.js';  // Adjust if the path is different
 import Role from '../models/role.js';
 import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
+import Partner from '../models/partner.js'; 
+
+
 
 const register=async (req,res)=>{
     try{
@@ -48,54 +51,70 @@ catch(err) {
 
 
 
-const login =async (req, res) => {
-    try{
-
-        console.log('Request body:', req.body);
-        const user=await User.findOne({email:req.body.email})
-       .populate("role","name")
-       .exec();
-
-       
-       if (!user){
-        console.log('User not found');
-            return res.status(404).send("user not found");
-        }
-        console.log('User found:', user);
-
-        const ispasswordCorrect= await bcrypt.compare(req.body.password,user.password);
-        
-        if(!ispasswordCorrect) {
-            console.log('Password incorrect');
-            return res.status(401).send("password incorrect");
-        }
-        const token = jwt.sign({
-            id: user._id,  role:user.role
-        },
-    process.env.JWT_SECRET,{ expiresIn: '1h' });
-
+const login = async (req, res) => {
+  try {
+    console.log('Request body:', req.body);
+    const { email, password } = req.body;
+    
+    // Check if it's a user
+    let isUser = true;
+    let account = await User.findOne({ email })
+      .populate("role", "name")
+      .exec();
+    
+    // If not a user, check if it's a partner
+    if (!account) {
+      isUser = false;
+      account = await Partner.findOne({ email })
+        .populate("role", "name")
+        .exec();
+      
+      // If neither user nor partner exists with this email
+      if (!account) {
+        console.log('Account not found');
+        return res.status(404).send("Account not found");
+      }
+    }
+    
+    console.log(`${isUser ? 'User' : 'Partner'} found:`, account);
+    
+    // Validate password
+    const isPasswordCorrect = await bcrypt.compare(password, account.password);
+    
+    if (!isPasswordCorrect) {
+      console.log('Password incorrect');
+      return res.status(401).send("Password incorrect");
+    }
+    
+    // Generate token with account type info
+    const token = jwt.sign({
+      id: account._id,
+      role: account.role,
+      accountType: isUser ? 'user' : 'partner'
+    }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    
     console.log('Generated token:', token);
     console.log('JWT Secret:', process.env.JWT_SECRET);
     
-    res.cookie("token",token,{httpOnly :true , secure: process.env.NODE_ENV === 'production', sameSite: 'strict'});
-    
-    
-    return res.status(200).json({
-        status: 200,
-        message: "Login successful",
-        data: user
+    // Set cookie and send response
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
     });
     
-     
+    return res.status(200).json({
+      status: 200,
+      message: "Login successful",
+      data: account,
+      accountType: isUser ? 'user' : 'partner'
+    });
     
-    }
-
-    catch(err){
-        console.error('Error during login:', err);
-        return res.status(500).send('something went wrong ');
-    }
+  } catch (err) {
+    console.error('Error during login:', err);
+    return res.status(500).send('Something went wrong');
+  }
 };
-
 
 
 const sendPasswordReset= async(req,res)=>{

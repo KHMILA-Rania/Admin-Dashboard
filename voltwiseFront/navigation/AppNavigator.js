@@ -17,6 +17,8 @@ import UserProfile from '../screens/user/userProfile';
 import ComplaintsList from '../screens/user/ComplaintsList';
 import UserReservations from '../screens/user/UserReservations';
 import StationList from '../screens/StationList';
+import HomePartner from '../screens/partner/HomePartner';
+import Profile from '../screens/partner/Profile';
 const Stack = createNativeStackNavigator();
 
 
@@ -38,6 +40,11 @@ export default function AppNavigator (){
           <Stack.Screen name="ComplaintsList" component={ComplaintsList} />
           <Stack.Screen name="StationList" component={StationList} />
            <Stack.Screen name="UserReservations" component={UserReservations} />
+            <Stack.Screen name="HomePartner" component={HomePartner} />
+          <Stack.Screen name="Profile" component={Profile} />
+          
+          
+          
           </Stack.Navigator>
         </NavigationContainer>
       );

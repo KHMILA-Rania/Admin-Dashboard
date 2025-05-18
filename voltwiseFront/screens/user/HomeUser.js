@@ -227,6 +227,11 @@ const HomeUser = ({ navigation }) => {
 
   const handleLogout = async () => {
     try {
+      
+     
+      
+
+
       await AsyncStorage.clear();
       navigation.reset({
         index: 0,
