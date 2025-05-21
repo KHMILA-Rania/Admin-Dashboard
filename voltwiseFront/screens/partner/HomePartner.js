@@ -12,13 +12,18 @@ import { useNavigation } from '@react-navigation/native';
 import BottomNavBar from './BottomNavBar'; // Import the BottomNavBar component
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState,useEffect } from 'react';
-
+import GLOBALS from '../../global/variables';
 const HomePartner = () => {
     const [userType, setUserType] = useState('user');
      const [userName, setUserName] = useState('User');
-      const [userID, setUserID] = useState('');
+    const [userID, setUserID] = useState('');
+    const [complaints, setComplaints] = useState([]);
+    const [pendingCount, setPendingCount] = useState(0);
+  const [resolvedCount, setResolvedCount] = useState(0);
+    const [complaintsCount, setComplaintsCount] = useState(0);
+    const [stationsCount, setStationsCount] = React.useState(0);
 
-      const currentDate = new Date();
+    const currentDate = new Date();
       const formattedDate = currentDate.toLocaleString('en-US', {
             day: '2-digit',
             month: 'short',
@@ -67,10 +72,86 @@ const HomePartner = () => {
       } catch (error) {
         console.error('Error loading user data:', error);
       }
+
+
     };
+
+
+
+
+
 
     initialize();
   }, []);
+
+
+
+
+   useEffect(() => {
+    if (!userID) return;
+    const fetchComplaints = async () => {
+      try {
+
+        const response = await fetch(`http://${GLOBALS.IP}:3000/complaint/`);
+        const data = await response.json();
+     
+        const assignedComplaints = data.filter(
+          (complaint) => complaint.assignedPartnerId === userID
+        );
+
+        const total = assignedComplaints.length;
+        const pending = assignedComplaints.filter(c => c.status === 'pending').length;
+        const resolved = assignedComplaints.filter(c => c.status === 'resolved').length;
+
+        setComplaintsCount(total);
+        setPendingCount(pending);
+        setResolvedCount(resolved);
+
+       
+      } catch (error) {
+        console.error('Error fetching complaints:', error);
+      }
+    };
+    fetchComplaints();
+  }, [userID]);
+
+  useEffect(() => {
+  if (!userID) return;
+
+  const fetchStations = async () => {
+    try {
+      const response = await fetch(`http://${GLOBALS.IP}:3000/station/`);
+      const data = await response.json();
+
+      console.log('Type of userID:', typeof userID, 'value:', userID);
+
+      if (!Array.isArray(data)) {
+        console.warn('Expected stations array but got:', data);
+        return;
+      }
+
+     const ownedStations = data.filter(station => {
+    const ownerId = typeof station.owner === 'object' 
+    ? station.owner?._id 
+    : station.owner;
+     return String(ownerId) === String(userID);
+});
+
+      console.log('Owned Stations:', ownedStations);
+
+      // You can set state here to store stations count or list
+      setStationsCount(ownedStations.length);
+      // or setStations(ownedStations); if you want full list
+
+    } catch (error) {
+      console.error('Error fetching stations:', error);
+    }
+  };
+
+  fetchStations();
+}, [userID]);
+
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -97,18 +178,18 @@ const HomePartner = () => {
         {/* Earnings Cards */}
         <View style={styles.earningsSection}>
           <View style={[styles.earningCard, styles.totalEarning]}>
-            <Text style={styles.cardLabel}>TOTAL EARNING</Text>
-            <Text style={styles.cardAmount}>₹ 5,25,000</Text>
+            <Text style={styles.cardLabel}>TOTAL COMPLAINTS</Text>
+            <Text style={styles.cardAmount}>{complaintsCount}</Text>
           </View>
 
           <View style={styles.cardRow}>
             <View style={[styles.earningCard, styles.received]}>
               <Text style={styles.cardLabel}>RECEIVED</Text>
-              <Text style={styles.cardAmount}>₹ 4,50,000</Text>
+              <Text style={styles.cardAmount}>{pendingCount}</Text>
             </View>
             <View style={[styles.earningCard, styles.due]}>
-              <Text style={styles.cardLabel}>DUE</Text>
-              <Text style={styles.cardAmount}>₹ 75,000</Text>
+              <Text style={styles.cardLabel}>RESOLVED</Text>
+              <Text style={styles.cardAmount}>{resolvedCount}</Text>
             </View>
           </View>
         </View>
@@ -117,68 +198,60 @@ const HomePartner = () => {
         <View style={styles.statsSection}>
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>6</Text>
-              <Text style={styles.statLabel}>ALL JOBS</Text>
+              <Text style={styles.statNumber}>{stationsCount}</Text>
+              <Text style={styles.statLabel}>All Stations</Text>
             </View>
+          
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>7</Text>
-              <Text style={styles.statLabel}>INVOICES</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>6</Text>
-              <Text style={styles.statLabel}>RECOGNITION</Text>
+              <TouchableOpacity style={styles.stationsBtn} onPress={() => navigation.navigate('Stations')}>
+                <Text style={styles.statNumber}>Go to list</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
 
         {/* Invoice Items */}
-        <View style={styles.invoiceSection}>
-          <View style={styles.invoiceItem}>
+        <View style={styles.invoiceItem}>
             <View style={styles.invoiceHeader}>
-              <Text style={styles.invoiceName}>RAHUL MEHRA</Text>
+              <Text style={styles.invoiceName}>All complaints</Text>
               <TouchableOpacity style={styles.dropdown}>
                 <Text style={styles.dropdownIcon}>▼</Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.invoiceSubtitle}>WS TOWERS, ACE ENTERPRISES</Text>
+            <Text style={styles.invoiceSubtitle}>{complaintsCount}</Text>
             <View style={styles.progressContainer}>
               <View style={styles.progressBar}>
                 <View style={[styles.progressFill, { width: '100%' }]} />
               </View>
-              <Text style={styles.completedText}>COMPLETED</Text>
+              <Text style={styles.progressText}></Text>
             </View>
-            <TouchableOpacity style={styles.shareButton}>
-              <Text style={styles.shareButtonText}>SHARE INVOICE</Text>
+            <TouchableOpacity style={styles.shareButton} onPress={() => navigation.navigate('AssignedComplaints')}>
+              <Text style={styles.shareButtonText}>Go to Complaints</Text>
             </TouchableOpacity>
           </View>
 
+        <View style={styles.invoiceSection}>
           <View style={styles.invoiceItem}>
             <View style={styles.invoiceHeader}>
-              <Text style={styles.invoiceName}>HARSHIL CHAUHAN</Text>
+              <Text style={styles.invoiceName}>All Stations</Text>
               <TouchableOpacity style={styles.dropdown}>
                 <Text style={styles.dropdownIcon}>▼</Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.invoiceSubtitle}>RCR VENTURES, ACE ENTERPRISES</Text>
+            <Text style={styles.invoiceSubtitle}>{stationsCount}</Text>
             <View style={styles.progressContainer}>
               <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: '80%' }]} />
+                <View style={[styles.progressFill, { width: '100%' }]} />
               </View>
-              <Text style={styles.progressText}>80% COMPLETED</Text>
+              <Text style={styles.completedText}></Text>
             </View>
-            <TouchableOpacity style={styles.shareButton}>
-              <Text style={styles.shareButtonText}>SHARE INVOICE</Text>
+            <TouchableOpacity style={styles.shareButton} onPress={() => navigation.navigate('Stations')}>
+              <Text style={styles.shareButtonText}>Go to stations</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.invoiceItem}>
-            <View style={styles.invoiceHeader}>
-              <Text style={styles.invoiceName}>VIMAL GAJRI</Text>
-              <TouchableOpacity style={styles.dropdown}>
-                <Text style={styles.dropdownIcon}>▼</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          
+
         </View>
       </ScrollView>
 
@@ -212,12 +285,20 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 5,
   },
+  stationsBtn:{
+    borderWidth: 1,
+    borderColor: '#468fbf',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    alignSelf: 'flex-start',
+  },
   backArrow: {
     fontSize: 24,
     color: '#333',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 30,
     fontWeight: 'bold',
     color: '#333',
   },
@@ -233,7 +314,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   lastUpdate: {
-   fontSize: 14,
+   fontSize: 18,
     color: '#666',
     marginTop: 10,
     paddingBottom:20
@@ -244,7 +325,7 @@ const styles = StyleSheet.create({
   earningCard: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 20,
+    padding: 30,
     marginBottom: 15,
     elevation: 2,
     shadowColor: '#000',
@@ -253,7 +334,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
   },
   totalEarning: {
-    backgroundColor: '#ffe4b5',
+    backgroundColor: '#92b7cf',
   },
   received: {
     backgroundColor: '#e8f5e9',
@@ -261,7 +342,7 @@ const styles = StyleSheet.create({
     marginRight: 7.5,
   },
   due: {
-    backgroundColor: '#fce4ec',
+    backgroundColor: '#e5c4fb',
     flex: 1,
     marginLeft: 7.5,
   },
@@ -269,7 +350,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   cardLabel: {
-    fontSize: 12,
+    fontSize: 15,
     color: '#666',
     fontWeight: '600',
   },
@@ -281,7 +362,7 @@ const styles = StyleSheet.create({
   },
   statsSection: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 5,
     padding: 20,
     marginBottom: 20,
     elevation: 2,
@@ -303,7 +384,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   statLabel: {
-    fontSize: 10,
+    fontSize: 15,
     color: '#666',
     marginTop: 5,
     fontWeight: '600',
@@ -368,14 +449,14 @@ const styles = StyleSheet.create({
   },
   shareButton: {
     borderWidth: 1,
-    borderColor: '#e91e63',
+    borderColor: '#286ea5',
     borderRadius: 20,
     paddingVertical: 8,
     paddingHorizontal: 15,
     alignSelf: 'flex-start',
   },
   shareButtonText: {
-    color: '#e91e63',
+    color: '#286ea5',
     fontSize: 10,
     fontWeight: '600',
   },

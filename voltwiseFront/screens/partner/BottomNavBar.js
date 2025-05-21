@@ -10,7 +10,7 @@ import { useNavigation } from '@react-navigation/native';
 const BottomNavBar = ({ activeTab = 'HOME/MAIN', onTabPress }) => {
   const navigation=useNavigation();
     const navItems = [
-    { key: 'HOME/MAIN', icon: '🏠', label: 'HOME/MAIN' },
+    { key: 'HOME', icon: '🏠', label: 'HOME' },
     { key: 'STATIONS', icon: '🔌', label: 'STATIONS' },
     { key: 'COMPLAINTS', icon: '📝', label: 'COMPLAINTS' },
     { key: 'PROFILE', icon: '👤', label: 'PROFILE' },
@@ -31,6 +31,15 @@ const BottomNavBar = ({ activeTab = 'HOME/MAIN', onTabPress }) => {
             // Handle specific navigation logic
             if (item.key === 'PROFILE' && navigation) {
               navigation.navigate('Profile');
+            }
+            if (item.key === 'STATIONS' && navigation) {
+              navigation.navigate('Stations');
+            }
+              if (item.key === 'HOME' && navigation) {
+              navigation.navigate('HomePartner');
+            }
+            if (item.key === 'COMPLAINTS' && navigation) {
+              navigation.navigate('AssignedComplaints');
             }
           }}
         >

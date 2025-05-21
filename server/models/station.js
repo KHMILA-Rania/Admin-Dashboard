@@ -24,7 +24,7 @@ const stationSchema = new mongoose.Schema({
   kilowatt: Number,
   owner: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Partner", // assuming the partner model is named 'Partner'
+    ref: "Partner",
     required: true,
   },
   image: {

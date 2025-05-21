@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { addStation, deleteStation, freeStation, getAllStations, getStationById, reserveStation, updateStation } from '../controllers/stationController.js';
+import { addStation, deleteStation,getStationsByOwner, freeStation, getAllStations, getStationById, reserveStation, updateStation } from '../controllers/stationController.js';
 const router=express.Router();
 
 
@@ -28,5 +28,6 @@ router.get("/", getAllStations);
 router.get("/:id", getStationById);
 router.put("/:id",updateStation);
 router.delete("/:id", deleteStation)
+router.get('/owner/:ownerId', getStationsByOwner); 
 
 export default router;

@@ -158,7 +158,42 @@ const getComplaintsByPartner = async (req, res) => {
     }
 };
 
+
+// PATCH /api/complaints/:id/status
+const updateComplaintStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    // Check if the status is valid
+    const validStatuses = ['pending', 'resolved', 'closed'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    const updatedComplaint = await Complaint.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+
+    if (!updatedComplaint) {
+      return res.status(404).json({ message: 'Complaint not found' });
+    }
+
+    res.status(200).json({
+      message: 'Complaint status updated successfully',
+      complaint: updatedComplaint,
+    });
+  } catch (err) {
+    console.error('Error updating complaint status:', err);
+    res.status(500).json({ message: 'Server error', details: err.message });
+  }
+};
+
+
 export{
+    updateComplaintStatus,
     CreateComplaint,
     deleteComplaint,
     getComplaintById,

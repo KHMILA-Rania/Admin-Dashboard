@@ -3,27 +3,34 @@ import mongoose from 'mongoose';
 
 // Add Station
 const addStation = async (req, res) => {
-  const {
-    name,
-    location,
-    capacity,
-    owner,
-    state,
-    plugType,
-    chargingTime,
-    kilowatt,
-    availableSlots,  // New field
-    pricePerKWh,  // New field
-    supportedVehicles,  // New field
-    latitude,  // New field
-    longitude,  // New field
-  } = req.body;
-
   try {
+    let {
+      name,
+      location,
+      capacity,
+      owner,
+      state,
+      plugType,
+      chargingTime,
+      kilowatt,
+      availableSlots,
+      pricePerKWh,
+      supportedVehicles,
+      latitude,
+      longitude,
+    } = req.body;
+
+    // Validate required fields
     if (!name || !owner) {
       return res.status(400).json({ message: "Name and owner are required." });
     }
 
+    // Parse supportedVehicles if it's a string (from formData)
+    if (typeof supportedVehicles === 'string') {
+      supportedVehicles = supportedVehicles.split(',').map(v => v.trim());
+    }
+
+    // Build new station object
     const newStation = new Station({
       name,
       location,
@@ -33,26 +40,30 @@ const addStation = async (req, res) => {
       plugType,
       chargingTime,
       kilowatt,
-      availableSlots,  // New field
-      pricePerKWh,  // New field
-      supportedVehicles,  // New field
-      latitude,  // New field
-      longitude,  // New field
-      image: req.file ? `/uploads/${req.file.filename}` : null,
-      isReserved: false,  // Initial state of reservation
-      reservedBy: null,  // Initially no reservation
-      reservationTime: null,  // Initially no reservation time
+      availableSlots,
+      pricePerKWh,
+      supportedVehicles,
+      latitude,
+      longitude,
+      image: req.file ? `/uploads/${req.file.filename}` : undefined, // undefined will use default image if schema has one
+      isReserved: false,
+      reservedBy: null,
+      reservationTime: null,
     });
 
-    await newStation.save()
-      .then(station => res.status(201).json(station))
-      .catch(err => res.status(500).json({ message: err.message }));
+    console.log("New station data:", newStation);
+
+    // Save to DB
+    const savedStation = await newStation.save();
+
+    res.status(201).json(savedStation);
 
   } catch (error) {
     console.error("Error creating station:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 // Get All Stations
 const getAllStations = async (req, res) => {
@@ -251,5 +262,27 @@ const freeStation = async (req, res) => {
   }
 };
 
+// Get Stations by Owner ID
+const getStationsByOwner = async (req, res) => {
+  try {
+    const ownerId = req.params.ownerId;
 
-export { addStation, getAllStations, getStationById, updateStation, deleteStation, reserveStation, freeStation };
+    if (!mongoose.Types.ObjectId.isValid(ownerId)) {
+      return res.status(400).json({ message: "Invalid owner ID" });
+    }
+
+    const stations = await Station.find({ owner: ownerId }).populate("owner");
+
+    if (stations.length === 0) {
+      return res.status(404).json({ message: "No stations found for this owner" });
+    }
+
+    res.status(200).json(stations);
+  } catch (error) {
+    console.error("Error fetching stations by owner:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+export {getStationsByOwner, addStation, getAllStations, getStationById, updateStation, deleteStation, reserveStation, freeStation };
