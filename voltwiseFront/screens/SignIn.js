@@ -135,11 +135,11 @@ const HandleSubmit = async () => {
     <ScrollView
       contentContainerStyle={{flexGrow: 1}}
       keyboardShouldPersistTaps={'always'}>
-      <View style={{backgroundColor: 'white'}}>
+      <View style={{backgroundColor: '#39B2DB'}}>
         <View style={style.logoContainer}>
           <Image
             style={style.logo}
-            source={require('../assets/voltwiselogo.png')}
+            source={require('../assets/white.png')}
           />
       
         </View>
@@ -183,17 +183,18 @@ const HandleSubmit = async () => {
               marginRight: 10,
             }}>
             <Text style={{color: 'gray', fontWeight: '700'}} onPress={()=>navigation.navigate('ResetPassword')}>Forgot Password</Text>
-          </View>
-        </View>
-        <View style={style.button}>
-          <TouchableOpacity style={style.inBut} onPress={HandleSubmit}>
+           <TouchableOpacity style={style.inBut} onPress={HandleSubmit}>
             <View>
               <Text style={style.textSign}>Log in</Text>
             </View>
           </TouchableOpacity>
+          </View>
+        </View>
+        <View style={style.button}>
+         
        
           <View style={{padding: 15}}>
-            <Text style={{fontSize: 14, fontWeight: 'bold', color: '#919191'}}>
+            <Text style={{fontSize: 14, fontWeight: 'bold', color: 'white',marginTop: 10, textAlign:'center'}}>
               ----Or Continue as----
             </Text>
           </View>

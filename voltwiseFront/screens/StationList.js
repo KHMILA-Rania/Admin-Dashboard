@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   reservationButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#223958',
     marginHorizontal: 16,
     marginBottom: 10,
     paddingVertical: 12,

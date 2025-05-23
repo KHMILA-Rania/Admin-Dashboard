@@ -290,15 +290,13 @@ const HomeUser = ({ navigation }) => {
             <Text style={styles.timerText}>Time left: {timeLeft}</Text>
           </View>
         )}
-        <Image source={require('../../assets/logop-blue.png')} style={styles.logo} />
+        <Image source={require('../../assets/white.png')} style={styles.logo} />
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.titles}>
-        <Text style={styles.title}>Welcome, {userName}!</Text>
-      </View>
+      
 
       <View style={{ flex: 1 }}>
         <View style={styles.buttonContainer}>
@@ -426,7 +424,7 @@ const HomeUser = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   timerBanner: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#39B2DB',
     paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
@@ -443,7 +441,7 @@ const styles = StyleSheet.create({
   },
   container: { 
     flex: 1, 
-    backgroundColor: '#E4F4FF' 
+    backgroundColor: '#223958' 
   },
   header: {
     flexDirection: 'row',
@@ -453,19 +451,23 @@ const styles = StyleSheet.create({
     paddingTop: height * 0.05,
   },
   logo: { 
-    width: 50, 
-    height: 50 
+    width: 170, 
+    height: 70 ,
+    marginBottom:9
   },
   logoutButton: {
-    backgroundColor: '#39B2DB',
+    backgroundColor: 'white',
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 30,
+     marginBottom:10
   },
   logoutText: { 
-    color: 'white', 
+    color: '#223958', 
     fontSize: 16, 
     fontWeight: 'bold' 
+    ,
+   
   },
   titles: { 
     alignItems: 'center', 

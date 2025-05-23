@@ -22,6 +22,7 @@ import Profile from '../screens/partner/Profile';
 import Stations from '../screens/partner/Stations';
 import CreateStation from '../screens/partner/CreateStation';
 import AssignedComplaints from '../screens/partner/AssignedComplaints';
+import UpdateStation from '../screens/partner/UpdateStation';
 const Stack = createNativeStackNavigator();
 
 
@@ -48,7 +49,7 @@ export default function AppNavigator (){
           <Stack.Screen name="Stations" component={Stations} />
           <Stack.Screen name="CreateStation" component={CreateStation} />
           <Stack.Screen name="AssignedComplaints" component={AssignedComplaints} />
-          
+          <Stack.Screen name="UpdateStation" component={UpdateStation} />
           </Stack.Navigator>
         </NavigationContainer>
       );

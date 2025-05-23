@@ -23,10 +23,8 @@ import BottomNavBar from './BottomNavBar';
 const CreateStation = () => {
   const [formData, setFormData] = useState({
     name: '',
-    marque: '',
     plugType: '',
     capacity: '',
-    location: '',
     chargingTime: '',
     kilowatt: '',
     availableSlots: '',
@@ -43,7 +41,7 @@ const CreateStation = () => {
   useEffect(() => {
     const fetchOwnerId = async () => {
       try {
-        const userId = await AsyncStorage.getItem('userId'); // your key name here
+        const userId = await AsyncStorage.getItem('userId');
         if (userId) {
           setOwnerId(userId);
         } else {
@@ -76,27 +74,53 @@ const CreateStation = () => {
       return;
     }
 
-    if (!formData.name || !formData.availableSlots || !formData.pricePerKWh || !formData.supportedVehicles) {
+    // Validate required fields based on API response structure
+    if (!formData.name || !formData.plugType || !formData.capacity || 
+        !formData.availableSlots || !formData.pricePerKWh || !formData.supportedVehicles ||
+        !formData.latitude || !formData.longitude || !formData.chargingTime || !formData.kilowatt) {
       Alert.alert('Validation Error', 'Please fill all required fields');
       return;
     }
 
     const data = new FormData();
-    Object.entries(formData).forEach(([key, value]) => {
-      if (key === 'supportedVehicles') {
-        data.append(key, value);
-      } else if (key === 'image' && value) {
-        data.append('image', {
-          uri: value.uri,
-          name: value.fileName || 'photo.jpg',
-          type: value.type || 'image/jpeg',
-        });
-      } else {
-        data.append(key, value);
-      }
+
+    // Add basic fields
+    data.append('name', formData.name);
+    data.append('plugType', formData.plugType);
+    data.append('capacity', parseInt(formData.capacity));
+    data.append('chargingTime', formData.chargingTime);
+    data.append('kilowatt', parseInt(formData.kilowatt));
+    data.append('availableSlots', parseInt(formData.availableSlots));
+    data.append('pricePerKWh', parseFloat(formData.pricePerKWh));
+    data.append('state', formData.state);
+    data.append('owner', ownerId);
+
+    // Handle coordinates - convert to numbers
+    const longitude = parseFloat(formData.longitude);
+    const latitude = parseFloat(formData.latitude);
+    
+    data.append('longitude', longitude);
+    data.append('latitude', latitude);
+
+    // Handle location object structure
+    data.append('location[type]', 'Point');
+    data.append('location[coordinates][0]', longitude);
+    data.append('location[coordinates][1]', latitude);
+
+    // Handle supported vehicles array (split comma-separated string)
+    const vehiclesArray = formData.supportedVehicles.split(',').map(v => v.trim()).filter(v => v);
+    vehiclesArray.forEach((vehicle, index) => {
+      data.append(`supportedVehicles[${index}]`, vehicle);
     });
 
-    data.append('owner', ownerId);
+    // Handle image
+    if (formData.image) {
+      data.append('image', {
+        uri: formData.image.uri,
+        name: formData.image.fileName || 'photo.jpg',
+        type: formData.image.type || 'image/jpeg',
+      });
+    }
 
     try {
       const response = await axios.post(`http://${GLOBALS.IP}:3000/station/add`, data, {
@@ -104,11 +128,34 @@ const CreateStation = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
+      
       Alert.alert('Success', 'Station created successfully');
-      console.log(response.data);
+      console.log('Station created:', response.data);
+      
+      // Reset form after successful creation
+      setFormData({
+        name: '',
+        plugType: '',
+        capacity: '',
+        chargingTime: '',
+        kilowatt: '',
+        availableSlots: '',
+        pricePerKWh: '',
+        supportedVehicles: '',
+        latitude: '',
+        longitude: '',
+        state: 'active',
+        image: null,
+      });
+      
     } catch (error) {
       console.error('Error adding station:', error);
-      Alert.alert('Error', 'Failed to create station');
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        Alert.alert('Error', `Failed to create station: ${error.response.data.message || 'Unknown error'}`);
+      } else {
+        Alert.alert('Error', 'Failed to create station');
+      }
     }
   };
 
@@ -123,90 +170,84 @@ const CreateStation = () => {
           <Text style={styles.title}>Create New Station</Text>
 
           <TextInput
-            placeholder="Name"
+            placeholder="Name *"
             style={styles.input}
             placeholderTextColor={'#888'}
             onChangeText={(value) => handleInputChange('name', value)}
             value={formData.name}
           />
-          {/* ... rest of inputs remain unchanged ... */}
+
           <TextInput
-            placeholder="Marque"
-            style={styles.input}
-            placeholderTextColor={'#888'}
-            onChangeText={(value) => handleInputChange('marque', value)}
-            value={formData.marque}
-          />
-          <TextInput
-            placeholder="Plug Type"
+            placeholder="Plug Type *"
             style={styles.input}
             placeholderTextColor={'#888'}
             onChangeText={(value) => handleInputChange('plugType', value)}
             value={formData.plugType}
           />
+
           <TextInput
-            placeholder="Capacity"
+            placeholder="Capacity *"
             keyboardType="numeric"
             style={styles.input}
             placeholderTextColor={'#888'}
             onChangeText={(value) => handleInputChange('capacity', value)}
             value={formData.capacity}
           />
+
           <TextInput
-            placeholder="Location"
-            style={styles.input}
-            placeholderTextColor={'#888'}
-            onChangeText={(value) => handleInputChange('location', value)}
-            value={formData.location}
-          />
-          <TextInput
-            placeholder="Charging Time"
+            placeholder="Charging Time *"
             style={styles.input}
             placeholderTextColor={'#888'}
             onChangeText={(value) => handleInputChange('chargingTime', value)}
             value={formData.chargingTime}
           />
+
           <TextInput
-            placeholder="Kilowatt"
+            placeholder="Kilowatt *"
             keyboardType="numeric"
             style={styles.input}
             placeholderTextColor={'#888'}
             onChangeText={(value) => handleInputChange('kilowatt', value)}
             value={formData.kilowatt}
           />
+
           <TextInput
-            placeholder="Available Slots"
+            placeholder="Available Slots *"
             keyboardType="numeric"
             style={styles.input}
             placeholderTextColor={'#888'}
             onChangeText={(value) => handleInputChange('availableSlots', value)}
             value={formData.availableSlots}
           />
+
           <TextInput
-            placeholder="Price per KWh"
+            placeholder="Price per KWh *"
             keyboardType="numeric"
-            placeholderTextColor={'#888'}
             style={styles.input}
+            placeholderTextColor={'#888'}
             onChangeText={(value) => handleInputChange('pricePerKWh', value)}
             value={formData.pricePerKWh}
           />
+
           <TextInput
-            placeholder="Supported Vehicles (comma separated)"
+            placeholder="Supported Vehicles * (comma separated)"
             style={styles.input}
             placeholderTextColor={'#888'}
             onChangeText={(value) => handleInputChange('supportedVehicles', value)}
             value={formData.supportedVehicles}
           />
+
           <TextInput
-            placeholder="Latitude"
+            placeholder="Latitude *"
             keyboardType="numeric"
-            placeholderTextColor={'#888'}
             style={styles.input}
+            placeholderTextColor={'#888'}
             onChangeText={(value) => handleInputChange('latitude', value)}
             value={formData.latitude}
           />
+
           <TextInput
-            placeholder="Longitude"
+            placeholder="Longitude *"
             keyboardType="numeric"
             style={styles.input}
             placeholderTextColor={'#888'}
@@ -215,14 +256,17 @@ const CreateStation = () => {
           />
 
           <Button title="Choose Image" onPress={pickImage} />
-          {formData.image && <Image source={{ uri: formData.image.uri }} style={styles.image} />}
+          {formData.image && (
+            <Image source={{ uri: formData.image.uri }} style={styles.image} />
+          )}
 
           <View style={styles.submitBtn}>
             <TouchableOpacity onPress={handleSubmit}>
-              <Text style={{color:'white'}}>submit</Text>
+              <Text style={{ color: 'white', textAlign: 'center', fontSize: 16 }}>
+                Create Station
+              </Text>
             </TouchableOpacity>
           </View>
-         
         </ScrollView>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
@@ -230,16 +274,15 @@ const CreateStation = () => {
 };
 
 const styles = StyleSheet.create({
-  submitBtn:{
+  submitBtn: {
     backgroundColor: '#2e86c1',
-    paddingVertical: 12,
+    paddingVertical: 15,
     paddingHorizontal: 20,
     borderRadius: 8,
     marginBottom: 20,
     alignSelf: 'center',
-    paddingTop:10,
-    marginTop: 10,
-   
+    marginTop: 20,
+    minWidth: 150,
   },
   container: {
     padding: 20,
@@ -249,24 +292,27 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 12,
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#333',
   },
   input: {
-    marginBottom: 10,
+    marginBottom: 15,
     borderWidth: 1,
-    padding: 10,
-    borderRadius: 6,
+    borderColor: '#ddd',
+    padding: 12,
+    borderRadius: 8,
     color: '#333',
     backgroundColor: '#fff',
+    fontSize: 16,
   },
   image: {
     width: '100%',
     height: 200,
-    marginVertical: 10,
+    marginVertical: 15,
     borderRadius: 10,
     resizeMode: 'contain',
   },
-
 });
 
 export default CreateStation;

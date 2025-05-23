@@ -2,7 +2,7 @@ import {StyleSheet} from 'react-native';
 
 const style= StyleSheet.create({
   mainContainer: {
-    backgroundColor: 'white',
+    backgroundColor: '#39B2DB',
   },
   textSign: {
     fontSize: 18,
@@ -20,7 +20,7 @@ const style= StyleSheet.create({
   },
   logo: {
     height: 230,
-    width: 260,
+    width: 280,
     marginTop: 0,
     padding:0,
 
@@ -50,14 +50,25 @@ const style= StyleSheet.create({
   },
   loginContainer: {
     backgroundColor: '#daf0ff',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
     paddingHorizontal: 20,
     paddingVertical: 65,
-    borderColor: 'black',  // Set the border color to black
-    borderWidth: 1, 
-    marginHorizontal: 30,
-    borderRadius: 50
+    marginTop:0,
+    marginBottom: 10,
+    marginHorizontal: 25,
+    borderRadius: 0,
+    height: 420,
+     shadowColor: '#000',
+  shadowOffset: {
+    width: 2,
+    height: 4,
+  },
+  shadowOpacity: 0.9,
+  shadowRadius: 6,
+
+  // Shadow for Android
+  elevation: 10,
 
   },
   header: {
@@ -65,7 +76,7 @@ const style= StyleSheet.create({
     paddingHorizontal: 20,
   },
   text_header: {
-    color: '#4B9CD3',
+    color: '#39B2DB',
     fontWeight: 'bold',
     fontSize: 30,
   
@@ -79,12 +90,17 @@ const style= StyleSheet.create({
     margin: 20,
   },
   inBut: {
-    width: '70%',
-    backgroundColor: '#4B9CD3',
+    width: '80%',
+    backgroundColor: '#39B2DB',
     alignItems: 'center',
     paddingHorizontal: 15,
     paddingVertical: 15,
     borderRadius: 50,
+    marginTop: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 20,
+    
   },
   inBut2: {
     borderColor: 'black',  // Set the border color to black

@@ -17,6 +17,7 @@ import cors from 'cors';
 dotenv.config();
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -65,6 +66,12 @@ mongoose.connect(mongoURI, {connectTimeoutMS: 10000, useNewUrlParser: true, useU
   .catch((err) => {
     console.log('MongoDB connection error:', err);
   });
+
+
+  app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
 
  
 

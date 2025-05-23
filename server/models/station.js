@@ -14,7 +14,26 @@ const stationSchema = new mongoose.Schema({
     required: true,
   },
   capacity: Number,
-  location: String,
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      required: true,
+      default: 'Point',
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      required: true,
+    },
+  },
+  longitude:{
+    type: Number,
+    required: true,
+  },
+  latitude:{
+    type: Number,
+    required: true,
+  },
   state: {
     type: String,
     enum: ["active", "inactive", "maintenance"],
@@ -49,14 +68,7 @@ const stationSchema = new mongoose.Schema({
     type: [String],  // Array of supported vehicles (e.g., "Tesla", "Nissan Leaf")
     required: true,
   },
-  latitude: {
-    type: Number,
-    required: true,  // Latitude of the station
-  },
-  longitude: {
-    type: Number,
-    required: true,  // Longitude of the station
-  },
+
   isReserved: {
     type: Boolean,
     default: false,  // Indicates if the station is reserved
@@ -71,5 +83,7 @@ const stationSchema = new mongoose.Schema({
 
 
 });
+stationSchema.index({ location: '2dsphere' });
 
 export default mongoose.model('Station', stationSchema);
+
