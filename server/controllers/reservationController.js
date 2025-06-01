@@ -186,5 +186,20 @@ const getUserReservations = async (req, res) => {
   }
 };
 
+const getAllReservations = async (req, res) => {
+  try {
+    const reservations = await Reservation.find().populate('stationId');
 
-export {expireReservations,getUserReservations, createReservation, extendReservation, cancelReservation};
+    if (!reservations || reservations.length === 0) {
+      return res.status(404).json({ message: "No reservations found." });
+    }
+
+    res.status(200).json({ reservations });
+  } catch (err) {
+    console.error("Error fetching all reservations:", err);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+
+export {expireReservations,getUserReservations, createReservation, extendReservation, cancelReservation, getAllReservations};

@@ -7,7 +7,7 @@ import axios from 'axios';  // Make sure axios is imported!
 import CustomBottomBar from './customBottomBar';
 import GLOBALS from '../../global/variables'; // Adjust the path as necessary
 import { useRef } from 'react';
-
+import CustomAlert from './customAlert'; // Import your custom alert component
 const { height } = Dimensions.get('window');
 
 const HomeUser = ({ navigation }) => {
@@ -34,10 +34,14 @@ const [loadingNearby, setLoadingNearby] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [selectedStation, setSelectedStation] = useState(null);
   const [modalVisible, setModalVisible] = useState(false); // Modal visibility state
-
+const [alertVisible, setAlertVisible] = useState(false);
   
   
-  
+  const [customAlertData, setCustomAlertData] = useState({
+  allStations: [],
+  filteredStations: [],
+  userPlugType: ''
+});
   useEffect(() => {
     const initialize = async () => {
       try {
@@ -132,35 +136,51 @@ const [loadingNearby, setLoadingNearby] = useState(false);
     return () => clearInterval(timer);
   }, [reservationEndTime]);
 
+
+
+
 const findNearbyStations = async () => {
   try {
     setLoadingNearby(true);
     
-    const response = await axios.get(`http://${GLOBALS.IP}:3000/station/nearby-stations`, {
-      params: {
-        latitude: region.latitude,
-        longitude: region.longitude,
-        maxDistance: 10, // 10km radius, you can make this configurable
-        limit: 10, // limit to 10 stations
-        requireAvailableSlots: 'true' // only show available stations
-      }
-    });
+    const [response, userPlugType] = await Promise.all([
+      axios.get(`http://${GLOBALS.IP}:3000/station/nearby-stations`, {
+        params: {
+          latitude: region.latitude,
+          longitude: region.longitude,
+          maxDistance: 10,
+          limit: 10,
+          requireAvailableSlots: 'true'
+        }
+      }),
+      getUserPlugType(userID)
+    ]);
+    
+    const allStations = response.data.data;
+    const filteredStations = allStations.filter(
+      station => station.plugType === userPlugType
+    );
 
     if (response.data.success) {
-      setNearbyStations(response.data.data);
+      setNearbyStations(filteredStations);
       setShowingNearby(true);
       
-      Alert.alert(
-        'Nearby Stations Found', 
-        `Found ${response.data.count} stations within 10km`
-      );
+      // Set data for custom alert
+      setCustomAlertData({
+        allStations,
+        filteredStations,
+        userPlugType
+      });
+      setAlertVisible(true);
+
+      // Remove the old Alert.alert call - it's replaced by the custom alert
 
       // Optionally zoom to show nearby stations area
       if (response.data.data.length > 0) {
         setRegion({
           latitude: region.latitude,
           longitude: region.longitude,
-          latitudeDelta: 0.05, // Zoom out a bit to show nearby area
+          latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         });
       }
@@ -172,6 +192,18 @@ const findNearbyStations = async () => {
     setLoadingNearby(false);
   }
 };
+const getUserPlugType = async (userId) => {
+  try {
+    const response = await axios.get(`http://${GLOBALS.IP}:3000/user/${userId}`);
+     console.log("User plug type:", response.data.user.plugType);
+    return response.data.user.plugType;
+  
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    return null;
+  }
+};
+
 
 const resetToAllStations = () => {
   setShowingNearby(false);
@@ -374,7 +406,7 @@ const resetToAllStations = () => {
         ? "Loading..." 
         : showingNearby 
           ? "Show All" 
-          : "Find Nearby"}
+          : "Nearby Stations"}
     </Text>
   </TouchableOpacity>
           
@@ -483,6 +515,13 @@ const resetToAllStations = () => {
             </View>
           </Modal>
         )}
+        <CustomAlert
+              visible={alertVisible}
+              onClose={() => setAlertVisible(false)}
+              allStations={customAlertData.allStations}
+              filteredStations={customAlertData.filteredStations}
+              userPlugType={customAlertData.userPlugType}
+            />
 
         <CustomBottomBar style={styles.customBottomBar} />
       </View>
@@ -641,6 +680,191 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+   alertOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  alertContainer: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 350,
+    maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  alertHeader: {
+    alignItems: 'center',
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  iconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#E8F5E8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  iconText: {
+    fontSize: 24,
+  },
+  alertTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2D3748',
+    textAlign: 'center',
+  },
+  alertScrollView: {
+    maxHeight: 300,
+  },
+  alertContent: {
+    padding: 20,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F7FAFC',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2D9CDB',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#718096',
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: 15,
+  },
+  distanceContainer: {
+    backgroundColor: '#FFF5F5',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+  },
+  distanceTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2D3748',
+    marginBottom: 8,
+  },
+  distanceText: {
+    fontSize: 13,
+    color: '#4A5568',
+    lineHeight: 18,
+  },
+  plugTypeContainer: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+  },
+  plugTypeTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2D3748',
+    marginBottom: 5,
+  },
+  plugTypeSubtext: {
+    fontSize: 13,
+    color: '#059669',
+  },
+  stationsListContainer: {
+    marginTop: 5,
+  },
+  stationsListTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2D3748',
+    marginBottom: 10,
+  },
+  stationItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+  },
+  stationInfo: {
+    flex: 1,
+  },
+  stationName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2D3748',
+  },
+  stationDistance: {
+    fontSize: 12,
+    color: '#718096',
+    marginTop: 2,
+  },
+  availabilityBadge: {
+    backgroundColor: '#E6FFFA',
+    borderRadius: 15,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  availabilityText: {
+    fontSize: 11,
+    color: '#047857',
+    fontWeight: '500',
+  },
+  alertActions: {
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  alertButton: {
+    backgroundColor: '#2D9CDB',
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    alignItems: 'center',
+    shadowColor: '#2D9CDB',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  alertButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
