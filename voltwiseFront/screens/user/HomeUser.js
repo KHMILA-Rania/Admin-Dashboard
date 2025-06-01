@@ -19,7 +19,9 @@ const HomeUser = ({ navigation }) => {
   const [loadingStations, setLoadingStations] = useState(true);
   const mapRef = useRef(null);
   const [highlightAvailable, setHighlightAvailable] = useState(false);
- 
+ const [nearbyStations, setNearbyStations] = useState([]);
+const [showingNearby, setShowingNearby] = useState(false);
+const [loadingNearby, setLoadingNearby] = useState(false);
   const [region, setRegion] = useState({
     latitude: 36.895666,
     longitude: 10.1808403,
@@ -129,6 +131,53 @@ const HomeUser = ({ navigation }) => {
 
     return () => clearInterval(timer);
   }, [reservationEndTime]);
+
+const findNearbyStations = async () => {
+  try {
+    setLoadingNearby(true);
+    
+    const response = await axios.get(`http://${GLOBALS.IP}:3000/station/nearby-stations`, {
+      params: {
+        latitude: region.latitude,
+        longitude: region.longitude,
+        maxDistance: 10, // 10km radius, you can make this configurable
+        limit: 10, // limit to 10 stations
+        requireAvailableSlots: 'true' // only show available stations
+      }
+    });
+
+    if (response.data.success) {
+      setNearbyStations(response.data.data);
+      setShowingNearby(true);
+      
+      Alert.alert(
+        'Nearby Stations Found', 
+        `Found ${response.data.count} stations within 10km`
+      );
+
+      // Optionally zoom to show nearby stations area
+      if (response.data.data.length > 0) {
+        setRegion({
+          latitude: region.latitude,
+          longitude: region.longitude,
+          latitudeDelta: 0.05, // Zoom out a bit to show nearby area
+          longitudeDelta: 0.05,
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error finding nearby stations:', error);
+    Alert.alert('Error', 'Failed to find nearby stations');
+  } finally {
+    setLoadingNearby(false);
+  }
+};
+
+const resetToAllStations = () => {
+  setShowingNearby(false);
+  setNearbyStations([]);
+  getUserLocation(); // Return to user location
+};
 
   const extendReservation = async (reservationId) => {
     try {
@@ -312,6 +361,22 @@ const HomeUser = ({ navigation }) => {
             </Text>
           </TouchableOpacity>
 
+  <TouchableOpacity 
+    style={[
+      styles.actionButton,
+      showingNearby ? styles.highlightActiveButton : styles.actionButton
+    ]} 
+    onPress={showingNearby ? resetToAllStations : findNearbyStations}
+    disabled={loadingNearby}
+  >
+    <Text style={styles.buttonText}>
+      {loadingNearby 
+        ? "Loading..." 
+        : showingNearby 
+          ? "Show All" 
+          : "Find Nearby"}
+    </Text>
+  </TouchableOpacity>
           
         </View>
         
@@ -323,6 +388,7 @@ const HomeUser = ({ navigation }) => {
           showsUserLocation={true}
           showsMyLocationButton={true}
         >
+          
           <Marker
             coordinate={region}
             title="Your Location"
@@ -331,21 +397,23 @@ const HomeUser = ({ navigation }) => {
           />
 
           {/* Render stations dynamically */}
-          {stations.map((station) => (
-            <Marker
-              key={station._id}  // Assuming MongoDB ID; adjust if different
-              coordinate={{
-                latitude: station.latitude,
-                longitude: station.longitude,
-              }}
-              pinColor={station.isReserved ? "red" : "green"}
-              onPress={() => handleStationPress(station)} // Show modal when pressed
-            >
-              <View style={getMarkerStyle(station)}>
-                <Text style={{color: 'white', fontWeight: 'bold'}}>⚡</Text>
-              </View>
-            </Marker>
-          ))}
+         {(showingNearby ? nearbyStations : stations).map((station) => (
+  <Marker
+    key={station._id}
+    coordinate={{
+      latitude: station.latitude,
+      longitude: station.longitude,
+    }}
+    pinColor={station.isReserved ? "red" : "green"}
+    onPress={() => handleStationPress(station)}
+  >
+    <View style={getMarkerStyle(station)}>
+      <Text style={{color: 'white', fontWeight: 'bold'}}>
+        {showingNearby ? '📍' : '⚡'}
+      </Text>
+    </View>
+  </Marker>
+))}
         </MapView>
 
         {/* Modal for displaying station information */}
