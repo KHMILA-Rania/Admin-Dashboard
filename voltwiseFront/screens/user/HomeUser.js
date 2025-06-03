@@ -8,9 +8,12 @@ import CustomBottomBar from './customBottomBar';
 import GLOBALS from '../../global/variables'; // Adjust the path as necessary
 import { useRef } from 'react';
 import CustomAlert from './customAlert'; // Import your custom alert component
+import NotificationBanner from './NotificationBanner ';
+import useNotifications from './useNotifications';
 const { height } = Dimensions.get('window');
 
 const HomeUser = ({ navigation }) => {
+  const baseUrl = `http://${GLOBALS.IP}:3000`;
   const [userType, setUserType] = useState('user');
   const [userName, setUserName] = useState('User');
   const [userID, setUserID] = useState('');
@@ -36,7 +39,11 @@ const [loadingNearby, setLoadingNearby] = useState(false);
   const [modalVisible, setModalVisible] = useState(false); // Modal visibility state
 const [alertVisible, setAlertVisible] = useState(false);
   
-  
+    const {
+    notificationCount,
+    hasNewNotifications,
+    markNotificationsAsSeen,
+  } = useNotifications(userID, baseUrl);
   const [customAlertData, setCustomAlertData] = useState({
   allStations: [],
   filteredStations: [],
@@ -73,6 +80,13 @@ const [alertVisible, setAlertVisible] = useState(false);
 
     initialize();
   }, []);
+
+ const handleNotificationPress = () => {
+    // Navigate to complaints screen
+    navigation.navigate('ComplaintsList', { userID });
+    // Mark notifications as seen
+    markNotificationsAsSeen();
+  };
 
   const fetchStations = async () => {
     try {
@@ -365,6 +379,12 @@ const resetToAllStations = () => {
 
   return (
     <View style={styles.container}>
+       <NotificationBanner
+        notificationCount={notificationCount}
+        hasNewNotifications={hasNewNotifications}
+        onPress={handleNotificationPress}
+        onDismiss={markNotificationsAsSeen} // Optional: allow dismissing without viewing
+      />
       <View style={styles.header}>
         {reservationEndTime && (
           <View style={styles.timerBanner}>

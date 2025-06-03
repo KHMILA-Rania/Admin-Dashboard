@@ -2,7 +2,7 @@ import express from 'express';
 const router = express.Router();
 
 // Importing the complaint controller
-import { CreateComplaint, deleteComplaint, getComplaintsByPartner,getComplaintById, getAllComplaints, getComplaintsByUser, transferComplaintToPartner, updateComplaintStatus }from '../controllers/complaintController.js';
+import { CreateComplaint, deleteComplaint,markComplaintNotificationsAsSeen,getNotificationCount,getComplaintsByUserWithNotifications, getComplaintsByPartner,getComplaintById, getAllComplaints, getComplaintsByUser, transferComplaintToPartner, updateComplaintStatus }from '../controllers/complaintController.js';
 
 // Route to add a new complaint
 router.post('/add', CreateComplaint);
@@ -21,5 +21,20 @@ router.get('/', getAllComplaints);
 router.patch('/:complaintId/transfer', transferComplaintToPartner) 
 
 router.get('/complaints/by-partner', getComplaintsByPartner);
-router.patch('/:id/status',updateComplaintStatus)
+router.patch('/:id/status',updateComplaintStatus);
+
+router.get('/complaints/user/:userId/with-notifications', getComplaintsByUserWithNotifications);
+
+// Get just the notification count (lightweight)
+router.get('/complaints/user/:userId/notification-count', getNotificationCount);
+
+// Mark notifications as seen
+router.patch('/complaint/user/:userId/mark-seen', markComplaintNotificationsAsSeen);
+router.get('/test-notification/:userId', (req, res) => {
+    res.json({ 
+        message: 'Test route working', 
+        userId: req.params.userId,
+        timestamp: new Date().toISOString()
+    });
+});
 export default router;

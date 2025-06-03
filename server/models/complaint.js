@@ -31,6 +31,14 @@ const complaintSchema = new Schema({
     type: Date,
     default: Date.now,
   },
+   statusUpdatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+  isStatusUpdateSeen: {
+    type: Boolean,
+    default: true, // true for new complaints since user created them
+  },
 });
 
 // Create and export the model

@@ -165,7 +165,6 @@ const updateComplaintStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    // Check if the status is valid
     const validStatuses = ['pending', 'resolved', 'closed'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: 'Invalid status value' });
@@ -173,7 +172,11 @@ const updateComplaintStatus = async (req, res) => {
 
     const updatedComplaint = await Complaint.findByIdAndUpdate(
       id,
-      { status },
+      { 
+        status,
+        statusUpdatedAt: new Date(),
+        isStatusUpdateSeen: false // Mark as unseen for notification
+      },
       { new: true }
     );
 
@@ -192,6 +195,81 @@ const updateComplaintStatus = async (req, res) => {
 };
 
 
+// NEW: Get complaints with notification info for user
+const getComplaintsByUserWithNotifications = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
+
+        const complaints = await Complaint.find({ userId: userId });
+
+        if (!complaints.length) {
+            return res.status(404).json({ message: 'No complaints found for this user' });
+        }
+
+        // Count unseen status updates
+        const unseenUpdates = complaints.filter(complaint => !complaint.isStatusUpdateSeen).length;
+
+        res.status(200).json({ 
+            complaints,
+            hasNewNotifications: unseenUpdates > 0,
+            unseenCount: unseenUpdates
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: err.message });
+    }
+};
+
+// NEW: Mark complaint status updates as seen
+const markComplaintNotificationsAsSeen = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
+
+        await Complaint.updateMany(
+            { userId: userId, isStatusUpdateSeen: false },
+            { isStatusUpdateSeen: true }
+        );
+
+        res.status(200).json({ message: 'Notifications marked as seen' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: err.message });
+    }
+};
+
+// NEW: Get notification count only (lightweight)
+const getNotificationCount = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid user ID' });
+        }
+
+        const unseenCount = await Complaint.countDocuments({
+            userId: userId,
+            isStatusUpdateSeen: false
+        });
+
+        res.status(200).json({ 
+            hasNewNotifications: unseenCount > 0,
+            unseenCount 
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: err.message });
+    }
+};
+
+
 export{
     updateComplaintStatus,
     CreateComplaint,
@@ -200,6 +278,9 @@ export{
     getAllComplaints,
     getComplaintsByUser,
     transferComplaintToPartner,
-    getComplaintsByPartner
+    getComplaintsByPartner,
+     getComplaintsByUserWithNotifications,
+    markComplaintNotificationsAsSeen,
+    getNotificationCount
 
 }
