@@ -49,10 +49,10 @@ const StationList = () => {
 
         if (storedToken) {
           const userData = JSON.parse(storedToken);
-          setUserName(userData?.name || 'User');
+         // setUserName(userData?.name || 'User');
         }
         if (storedUserType) {
-          setUserType(storedUserType);
+         // setUserType(storedUserType);
         }
 
        
@@ -216,22 +216,22 @@ const reserveStation = async (stationId) => {
         
         <View style={styles.stationDetails}>
           <Text style={styles.stationInfo}>
-            📌 Location: {lat.toFixed(4)}, {lon.toFixed(4)}
+            ● Location: {lat.toFixed(4)}, {lon.toFixed(4)}
           </Text>
           <Text style={styles.stationInfo}>
-            🔋 Capacity: {item.capacity} slots
+            ●  Capacity: {item.capacity} slots
           </Text>
           <Text style={styles.stationInfo}>
-            🔌 Plug Type: {item.plugType}
+            ●  Plug Type: {item.plugType}
           </Text>
           <Text style={styles.stationInfo}>
-            ⚡ Power: {item.kilowatt}kW
+            ●  Power: {item.kilowatt}kW
           </Text>
           <Text style={styles.stationInfo}>
             💰 Price: ${item.pricePerKWh}/kWh
           </Text>
           <Text style={styles.stationInfo}>
-            🚗 Available Slots: {item.availableSlots}/{item.capacity}
+            ● Available Slots: {item.availableSlots}/{item.capacity}
           </Text>
         </View>
 
@@ -241,7 +241,7 @@ const reserveStation = async (stationId) => {
               ? item.supportedVehicles.join(', ') 
               : item.supportedVehicles}
           </Text>
-          
+          <View style={styles.buttonContainer}>
           <TouchableOpacity
             style={styles.detailsButton}
             onPress={() => handleViewDetails(item)}
@@ -254,6 +254,7 @@ const reserveStation = async (stationId) => {
           >
             <Text style={styles.detailsButtonText}>Reserve </Text>
           </TouchableOpacity>
+          </View>
         </View>
       </View>
       </View>
@@ -321,12 +322,10 @@ const reserveStation = async (stationId) => {
 
                   <View style={styles.modalSection}>
                     <Text style={styles.modalSectionTitle}>Location</Text>
-                    <Text style={styles.modalDetailText}>
-                      📌 Coordinates: {lat.toFixed(6)}, {lon.toFixed(6)}
-                    </Text>
+                    
                     {station.owner?.adress && (
                       <Text style={styles.modalDetailText}>
-                        🏠 Address: {station.owner.adress}
+                        ● Address: {station.owner.adress}
                       </Text>
                     )}
                   </View>
@@ -334,33 +333,33 @@ const reserveStation = async (stationId) => {
                   <View style={styles.modalSection}>
                     <Text style={styles.modalSectionTitle}>Technical Specifications</Text>
                     <Text style={styles.modalDetailText}>
-                      🔋 Total Capacity: {station.capacity} charging slots
+                      ● Total Capacity: {station.capacity} charging slots
                     </Text>
                     <Text style={styles.modalDetailText}>
-                      🚗 Available Slots: {station.availableSlots || 0}/{station.capacity}
+                      ● Available Slots: {station.availableSlots || 0}/{station.capacity}
                     </Text>
                     <Text style={styles.modalDetailText}>
-                      🔌 Plug Type: {station.plugType}
+                      ● Plug Type: {station.plugType}
                     </Text>
                     <Text style={styles.modalDetailText}>
-                      ⚡ Power Output: {station.kilowatt}kW
+                      ● Power Output: {station.kilowatt}kW
                     </Text>
                     <Text style={styles.modalDetailText}>
-                      ⏱️ Charging Time: {station.chargingTime} minutes
+                      ● Charging Time: {station.chargingTime} minutes
                     </Text>
                   </View>
 
                   <View style={styles.modalSection}>
                     <Text style={styles.modalSectionTitle}>Pricing</Text>
                     <Text style={styles.modalDetailText}>
-                      💰 Rate: ${station.pricePerKWh}/kWh
+                      ● Rate: {station.pricePerKWh}dt/kWh
                     </Text>
                   </View>
 
                   <View style={styles.modalSection}>
                     <Text style={styles.modalSectionTitle}>Vehicle Compatibility</Text>
                     <Text style={styles.modalDetailText}>
-                      🚙 Supported Vehicles: {Array.isArray(station.supportedVehicles) 
+                      ● Supported Vehicles: {Array.isArray(station.supportedVehicles) 
                         ? station.supportedVehicles.join(', ') 
                         : station.supportedVehicles}
                     </Text>
@@ -382,27 +381,11 @@ const reserveStation = async (stationId) => {
                       <Text style={styles.modalDetailText}>
                         📧 Email: {station.owner.email}
                       </Text>
-                      <Text style={styles.modalDetailText}>
-                        📞 Phone: {station.owner.phone}
-                      </Text>
+                      
                     </View>
                   )}
 
-                  {station.image && (
-                    <View style={styles.modalSection}>
-                      <Text style={styles.modalSectionTitle}>Station Image</Text>
-                      <Text style={styles.modalDetailText}>
-                        🖼️ Image URL: {station.image}
-                      </Text>
-                    </View>
-                  )}
-
-                  <View style={styles.modalSection}>
-                    <Text style={styles.modalSectionTitle}>Created</Text>
-                    <Text style={styles.modalDetailText}>
-                      📅 {new Date(station.createdAt).toLocaleDateString()} at {new Date(station.createdAt).toLocaleTimeString()}
-                    </Text>
-                  </View>
+               
                 </ScrollView>
 
                 {/* Fixed Action Buttons at Bottom */}
@@ -500,10 +483,14 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
   },
   heading: {
-    fontSize: 22,
-    fontWeight: '600',
-    marginBottom: 15,
-    color: '#333',
+      fontSize: 22,
+      fontWeight: 'bold',
+      marginBottom: 15,
+      alignSelf: 'center',
+      textTransform: 'uppercase',
+      borderBottomWidth: 1,
+      paddingBottom: 8,
+      color: '#2c3e50',
   },
   addButton: {
     backgroundColor: '#007bff',
@@ -571,12 +558,21 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginBottom: 12,
   },
+  buttonContainer: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  gap: 10, // For spacing (React Native >= 0.71)
+  marginTop: 10,
+},
   detailsButton: {
-    backgroundColor: '#28a745',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignSelf: 'flex-end',
+    backgroundColor: '#34a4a7',
+  paddingTop: 10,
+  paddingBottom: 5,
+  marginBottom: 5,
+  paddingHorizontal: 10,
+  borderRadius: 8,
+  flex: 1, 
+  alignItems: 'center',
   },
   detailsButtonText: {
     color: '#fff',
@@ -671,11 +667,15 @@ modalContainer: {
   },
     button: {
     backgroundColor: '#649ea2',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 5,
-    alignSelf: 'flex-start',
-    marginTop: 8,
+   paddingVertical: 10,
+  paddingHorizontal: 16,
+  borderRadius: 8,
+   
+  
+    marginTop: 1,
+    marginBottom: 5,
+    flex: 0.5,
+    alignItems: 'center',
   },
   centered: {
     flex: 1,

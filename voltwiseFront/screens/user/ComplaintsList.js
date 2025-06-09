@@ -3,13 +3,15 @@ import axios from 'axios';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import GLOBALS from '../../global/variables';
-
+import { TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 const ComplaintsList = () => {
     const [complaints, setComplaints] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [userId, setUserId] = useState(null); // To store the user ID
-    // Adjust this if needed
+    
+    const navigation = useNavigation();
 
     useEffect(() => {
         const fetchUserId = async () => {
@@ -79,53 +81,107 @@ const ComplaintsList = () => {
                         <View style={styles.complaintItem}>
                             <Text style={styles.subject}>{item.subject}</Text>
                             <Text>{item.description}</Text>
-                            <Text>Status: {item.status}</Text>
-                            <Text>Created at: {new Date(item.createdAt).toLocaleDateString()}</Text>
+                            <Text style={styles.status}>Status: {item.status}</Text>
+                            <Text style={styles.date}>Created at: {new Date(item.createdAt).toLocaleDateString()}</Text>
                         </View>
                     )}
                 />
             )}
+  
+                <TouchableOpacity
+                style={styles.fabContainer}
+                onPress={() => navigation.navigate('Complaint')}  // 👈 Adjust route name
+                >
+                <Text style={styles.fabText}>+</Text>
+                </TouchableOpacity>
+
+
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 20,
-        backgroundColor: '#f2f4f7',
-    },
-    title: {
-        fontSize: 26,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        textAlign: 'center',
-        color: '#14939C',
-    },
-    complaintItem: {
-        marginBottom: 16,
-        padding: 15,
-        backgroundColor: '#ffffff',
-        borderRadius: 7,
-        shadowColor: '#15AEFA',
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 4,
-    },
-    subject: {
-        fontSize: 18,
-        fontWeight: '700',
-        marginBottom: 6,
-        color: '#14939C',
-    },
-    centered: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f2f4f7',
-    },
+  container: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    backgroundColor: '#F8FAFC',
+  },
+  title: {
+     fontSize: 28,
+  fontWeight: 'bold',
+  marginBottom: 20,
+  textAlign: 'center',
+  color: '#14939C',
+  borderBottomWidth: 2,
+  borderColor: '#14939C',
+  paddingBottom: 8,
+  marginHorizontal: 40,
+  },
+  complaintItem: {
+    marginBottom: 16,
+    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    borderLeftWidth: 5,
+    borderLeftColor: '#14939C',
+  },
+  subject: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#14939C',
+    marginBottom: 6,
+  },
+  description: {
+    fontSize: 15,
+    color: '#4B5563',
+    marginBottom: 4,
+  },
+  status: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontStyle: 'italic',
+    marginBottom: 4,
+  },
+  date: {
+    fontSize: 13,
+    color: '#9CA3AF',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+  },
+  fabContainer: {
+  position: 'absolute',
+  bottom: 30,
+  right: 30,
+  backgroundColor: '#14939C',
+  width: 60,
+  height: 60,
+  borderRadius: 30,
+  justifyContent: 'center',
+  alignItems: 'center',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.3,
+  shadowRadius: 5,
+  elevation: 5,
+},
+fabText: {
+  fontSize: 30,
+  color: 'white',
+  lineHeight: 34,
+},
+
 });
+
 
 
 export default ComplaintsList;

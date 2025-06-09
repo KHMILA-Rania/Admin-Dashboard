@@ -193,9 +193,7 @@ const UserProfile = () => {
         </TouchableOpacity>
       )}
 
-      <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
+     
     </ScrollView>
   );
 };
@@ -312,7 +310,8 @@ const styles = StyleSheet.create({
   editButton: {
     marginTop: 20,
     padding: 12,
-    backgroundColor: '#39B2DB',
+    marginBottom: 20,
+    backgroundColor: '#05548f',
     borderRadius: 5,
     alignItems: 'center',
     marginHorizontal: 30,
