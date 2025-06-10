@@ -78,11 +78,12 @@ const StationList = () => {
   }
 };
 
-const reserveStation = async (stationId) => {
+const reserveStationn = async (stationId) => {
   try {
-    const response = await axios.patch(
-      `http://${GLOBALS.IP}:3000/station/reserve/${stationId}`,
-      { userId: userID }
+    const response = await axios.post(
+       `http://${GLOBALS.IP}:3000/reservation/${stationId}/reserve`,
+              { userId: userID },
+     
     );
     console.log('userid :', userID);
 
@@ -101,6 +102,37 @@ const reserveStation = async (stationId) => {
     }
   }
 };
+const reserveStation = async (stationId) => {
+  try {
+    const response = await axios.post(
+      `http://${GLOBALS.IP}:3000/reservation/${stationId}/reserve`,
+      { userId: userID }
+    );
+
+    console.log('Reservation response:', response.data);
+    console.log('userid :', userID);
+
+    Alert.alert('Reservation Successful', response.data.message);
+
+    // One of these could be throwing
+    setActiveReservation(response.data.station);
+   
+
+    fetchStations(); // Refresh station data
+  } catch (error) {
+    
+
+    if (error.response) {
+      Alert.alert(
+        'Reservation Failed',
+        error.response.data.message || 'Failed to reserve station'
+      );
+    } else {
+      Alert.alert('Error', 'Could not connect to server');
+    }
+  }
+};
+
 
   useEffect(() => {
     let timer;
@@ -215,9 +247,7 @@ const reserveStation = async (stationId) => {
         </View>
         
         <View style={styles.stationDetails}>
-          <Text style={styles.stationInfo}>
-            ● Location: {lat.toFixed(4)}, {lon.toFixed(4)}
-          </Text>
+          
           <Text style={styles.stationInfo}>
             ●  Capacity: {item.capacity} slots
           </Text>

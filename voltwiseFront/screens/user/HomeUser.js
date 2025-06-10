@@ -431,7 +431,8 @@ const resetToAllStations = () => {
   </TouchableOpacity>
           
         </View>
-        
+
+
         <MapView
           ref={mapRef}
           provider={PROVIDER_GOOGLE}
@@ -466,7 +467,9 @@ const resetToAllStations = () => {
     </View>
   </Marker>
 ))}
+
         </MapView>
+      
 
         {/* Modal for displaying station information */}
         {selectedStation && (
@@ -576,6 +579,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: height * 0.05,
+
+    paddingBottom:0,
+    marginBottom:0,
+    shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.3,
+  shadowRadius: 4,
+   elevation: 10,
+   borderBottomWidth: 1,
+  borderBottomColor: '#333',
+  
+
   },
   logo: { 
     width: 170, 
@@ -606,7 +621,17 @@ const styles = StyleSheet.create({
     color: '#223958' 
   },
   map: { 
-    flex: 1 
+     flex: 1,
+   
+    marginBottom: 20,
+    marginHorizontal: 15,
+    borderRadius: 60,
+    overflow: 'hidden',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -614,17 +639,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     marginVertical: 10,
     position: 'absolute',
+    marginHorizontal: 15,
     bottom: 70,
     left: 0,
     right: 0,
     zIndex: 999,
+    backgroundColor: 'rgba(200,200,200,0.4)',
+    paddingVertical: 10,
+    marginBottom:0,
   },
   actionButton: {
-    backgroundColor: '#2D9CDB',
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    borderRadius: 30,
-    flex: 0.48,
+    backgroundColor: '#33aab6',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    flex: 0.49,
     alignItems: 'center',
   },
   highlightActiveButton: {

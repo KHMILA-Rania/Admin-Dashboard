@@ -25,7 +25,7 @@ const UserReservations = () => {
     try {
       setLoading(true);
       const response = await fetch(`http://${GLOBALS.IP}:3000/reservation/user/${userId}`);
-      if (!response.ok) throw new Error('Failed to fetch reservations');
+      if (!response.ok) throw new Error('No reservations found');
       const data = await response.json();
       const reservationsData = Array.isArray(data) ? data : data.reservations || [];
       reservationsData.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));

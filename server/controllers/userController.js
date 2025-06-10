@@ -43,30 +43,32 @@ const getUserById=async (req,res)=>{
 
 const updateUser = async (req, res) => {
     const userId = req.params.id;
-    const user = await User.findById(userId);
-
-    if (!user) {
-        return res.status(404).json({ message: "User not found" });
-    }
 
     try {
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
         const updateData = { ...req.body };
 
-        // Check if the password is being updated
-        if (updateData.password) {
+        // Only hash if password is present and not empty
+        if (updateData.password && updateData.password.trim() !== "") {
             const salt = await bcrypt.genSalt(10);
             updateData.password = await bcrypt.hash(updateData.password, salt);
+        } else {
+            // Don't include password if it's empty
+            delete updateData.password;
         }
 
         const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
 
         return res.status(200).json({ message: "User updated successfully", user: updatedUser });
     } catch (error) {
-        console.log(error);
-        return res.status(500).send("error");
+        console.error(error);
+        return res.status(500).send("Server error");
     }
 };
-
 
 export  {getAllUsers,
     deleteUser,
