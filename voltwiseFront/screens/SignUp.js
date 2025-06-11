@@ -72,7 +72,9 @@ function SignUp(){
         <View style={styles.container}>
         <Text style={style.text_header}>Sign Up</Text>
         <Text style={{color: 'gray', fontWeight: '900', textAlign:'center', marginBottom: '20' , marginTop: '10'}}>sign up and accelerate your experience!</Text>
-  <View style={styles.containerSignUP}>
+
+         
+        <View style={styles.containerSignUP}>
 
         <Text style={styles.InputLabel}>Name</Text>
         <View style={style.action}>
@@ -170,6 +172,11 @@ function SignUp(){
         <TouchableOpacity style={styles.button} onPress={handleSubmit}>
           <Text style={[style.inBut, { color: 'white',textAlign:'center', fontWeight:'900'},style.textSign]}>Register</Text>
         </TouchableOpacity>
+
+         <Text style={{color: 'black', fontWeight: '500', textAlign:'center', marginBottom: '20' , marginTop: '10'}}>By filling this form you're creating a Client account,future partners should contact the Admin</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('ContactUs')}>
+          <Text style={{color: 'blue', fontWeight: '500', textAlign:'center', marginBottom: '20' , marginTop: '10'}}>Contact us for more information</Text>
+         </TouchableOpacity>
       </View>
       </ScrollView>
     );

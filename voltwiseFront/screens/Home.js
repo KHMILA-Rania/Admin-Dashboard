@@ -7,7 +7,7 @@ import Toast from 'react-native-toast-message';
 import Sidebar from './SideBar';
 import AnimatedSlogan from './useful/SloganAnimation';
 const Home = () => {
-  const [userData, setUserData] = useState(null);
+ 
   const [sidebarVisible, setSidebarVisible] = useState(false); 
   const [isScrolled, setIsScrolled] = useState(false); 
   const navigation = useNavigation();
@@ -154,22 +154,13 @@ const Home = () => {
         <View
           style={[
             styles.buttonsBackground,
-            {
-              backgroundColor: isScrolled ? 'rgba(156, 153, 153, 0.5)' : 'transparent', 
-              backdropFilter: isScrolled ? 'blur(50px)' : 'none', 
-            }
           ]}
         >
           <TouchableOpacity onPress={toggleSidebar} style={styles.toggleButton}>
             <Image source={require('../assets/icons/toggle.png')} style={styles.toggleIcon} />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate('SignUp')} style={styles.loginButton}>
-            <Text style={styles.loginText}>Sign Up</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => navigation.navigate('SignIn')} style={styles.loginButton}>
-            <Text style={styles.loginText}>Login</Text>
-          </TouchableOpacity>
+          
         </View>
       </View>
     </View>

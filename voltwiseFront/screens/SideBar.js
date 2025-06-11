@@ -1,20 +1,23 @@
 // Sidebar.js
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-
-const Sidebar = ({ navigation }) => {
+import { useNavigation } from '@react-navigation/native';
+const Sidebar = () => {
+  const navigation = useNavigation();
   return (
     <View style={styles.sidebarContainer}>
       <Text style={styles.title}></Text>
-  
+   <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('SignIn')}>
+        <Text style={styles.menuText}>Login to your account</Text>
+      </TouchableOpacity>
       <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('AboutUs')}>
         <Text style={styles.menuText}>About Us</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Sign-Up')}>
-        <Text style={styles.menuText}>Contact Info</Text>
+      <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('SignUp')}>
+        <Text style={styles.menuText}>Create account</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('Sign-Up')}>
-        <Text style={styles.menuText}>Complaint</Text>
+      <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('ContactUs')}>
+        <Text style={styles.menuText}>Contact Us</Text>
       </TouchableOpacity>
     </View>
   );

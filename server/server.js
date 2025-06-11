@@ -7,6 +7,7 @@ import userRoutes from './routes/userRoutes.js';
 import partnerRoutes from './routes/partnerRoutes.js'
 import complaintRoutes from './routes/complaintRoutes.js';
 import stationRoutes from './routes/stationRoutes.js';
+import contactRoutes from './routes/contactRoutes.js';
 import reservationRoutes from './routes/reservationRoutes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -95,6 +96,8 @@ app.use('/partner',partnerRoutes);
 
 //station routes
 app.use("/station",stationRoutes)
+//new contact
+app.use('/contact', contactRoutes);
 
 //app.listen(PORT, () => {
   //  console.log(`Server is running on http://localhost:${PORT}`);
