@@ -14,6 +14,7 @@ const { height } = Dimensions.get('window');
 
 const HomeUser = ({ navigation }) => {
   const baseUrl = `http://${GLOBALS.IP}:3000`;
+  const [selectedDistance, setSelectedDistance] = useState(10); 
   const [userType, setUserType] = useState('user');
   const [userName, setUserName] = useState('User');
   const [userID, setUserID] = useState('');
@@ -102,6 +103,50 @@ const [alertVisible, setAlertVisible] = useState(false);
     }
   };
 
+
+const handleNearbyStationsPress = () => {
+  if (showingNearby) {
+    resetToAllStations();
+  } else {
+    // Show distance selection alert
+    Alert.alert(
+      "Search Distance",
+      "Do you want to change the search distance?",
+      [
+        {
+          text: "Use Default (10km)",
+          onPress: () => findNearbyStations(10)
+        },
+        {
+          text: "Choose Distance",
+          onPress: showDistanceSelection
+        },
+        {
+          text: "Cancel",
+          style: "cancel"
+        }
+      ]
+    );
+  }
+};
+
+
+const showDistanceSelection = () => {
+  Alert.alert(
+    "Select Distance",
+    "Choose your preferred search distance:",
+    [
+      { text: "20 km", onPress: () => findNearbyStations(20) },
+            { text: "25 km", onPress: () => findNearbyStations(25) },
+      { text: "15 km", onPress: () => findNearbyStations(15) },
+      { text: "15 km", onPress: () => findNearbyStations(15) },
+      { text: "20 km", onPress: () => findNearbyStations(20) },
+
+      { text: "Cancel", style: "cancel" }
+    ]
+  );
+};
+
   const reserveStation = async (stationId) => {
     try {
       const response = await axios.post(
@@ -153,16 +198,17 @@ const [alertVisible, setAlertVisible] = useState(false);
 
 
 
-const findNearbyStations = async () => {
+const findNearbyStations = async (maxDistance = selectedDistance) => {
   try {
     setLoadingNearby(true);
+    setSelectedDistance(maxDistance);
     
     const [response, userPlugType] = await Promise.all([
       axios.get(`http://${GLOBALS.IP}:3000/station/nearby-stations`, {
         params: {
           latitude: region.latitude,
           longitude: region.longitude,
-          maxDistance: 10,
+          maxDistance: maxDistance,
           limit: 10,
           requireAvailableSlots: 'true'
         }
@@ -183,7 +229,8 @@ const findNearbyStations = async () => {
       setCustomAlertData({
         allStations,
         filteredStations,
-        userPlugType
+        userPlugType,
+        searchDistance: maxDistance
       });
       setAlertVisible(true);
 
@@ -418,7 +465,7 @@ const resetToAllStations = () => {
       styles.actionButton,
       showingNearby ? styles.highlightActiveButton : styles.actionButton
     ]} 
-    onPress={showingNearby ? resetToAllStations : findNearbyStations}
+     onPress={handleNearbyStationsPress}
     disabled={loadingNearby}
   >
     <Text style={styles.buttonText}>
@@ -482,7 +529,7 @@ const resetToAllStations = () => {
             <View style={styles.modalContainer}>
               <View style={styles.modalContent}>
                 <Text style={styles.modalTitle}>{selectedStation.name}</Text>
-                <Text style={styles.modalDescription}>{`Location: ${selectedStation.location}`}</Text>
+
                 <Text style={styles.modalDescription}>{`Capacity: ${selectedStation.capacity}`}</Text>
                 <Text style={styles.modalDescription}>{`Available Slots: ${selectedStation.availableSlots}`}</Text>
                 <Text style={styles.modalDescription}>{`Reserved ?: ${selectedStation.isReserved ? 'Yes' : 'No'}`}</Text>
