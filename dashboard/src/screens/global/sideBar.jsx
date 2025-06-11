@@ -218,21 +218,21 @@ const SideBar = () => {
             sx={{m:"15px 0 5px 20px"}}
             >Chart</Typography>
              <Item
-                title="BAr Chart"
+                title="complaints stats"
                 to='/dashboard/bar'
                 icon={<BarChartOutlinedIcon></BarChartOutlinedIcon>}
                 selected={selected}
                 setSelected={setSelected}
             ></Item>
              <Item
-                title="Pie Chart"
+                title="Reservations stats"
                 to='/dashboard/pie'
                 icon={<PieChartOutlineOutlinedIcon></PieChartOutlineOutlinedIcon>}
                 selected={selected}
                 setSelected={setSelected}
             ></Item>
              <Item
-                title="Line Chart"
+                title="Ratings stats"
                 to='/dashboard/line'
                 icon={<TimelineOutlinedIcon></TimelineOutlinedIcon>}
                 selected={selected}

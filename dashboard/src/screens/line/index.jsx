@@ -3,8 +3,8 @@ import { Box,Typography } from "@mui/material";
 import LineChart from "../../components/lineChart";
 const Line = () => {
     return ( <Box m="20px">
-        <Header title="LINE CHART" 
-        subtitle="Simple Line Chart "></Header>
+        <Header title="Ratings Stats" 
+        subtitle="Ratings Stats by station "></Header>
         <Box height="75vh">
             <LineChart></LineChart>
         </Box>

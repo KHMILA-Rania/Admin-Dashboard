@@ -494,7 +494,42 @@ const nearby = async (req, res) => {
   }
 };
 
+const addRating = async (req, res) => {
+  const { stars, comment, userId } = req.body; // Get userId from body now
+  const stationId = req.params.id;
 
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required' });
+  }
 
+  if (stars < 1 || stars > 5) {
+    return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+  }
 
-export {getStationsByOwner,nearby, addStation, getAllStations, getStationById, updateStation, deleteStation, reserveStation, freeStation };
+  try {
+    const station = await Station.findById(stationId);
+    if (!station) return res.status(404).json({ message: 'Station not found' });
+
+    // Check if user already rated
+    const alreadyRated = station.ratings.find(r => r.user.toString() === userId);
+    if (alreadyRated) {
+      return res.status(400).json({ message: 'You already rated this station' });
+    }
+
+    // Add rating
+    station.ratings.push({ user: userId, stars, comment });
+
+    // Update average
+    const total = station.ratings.reduce((sum, r) => sum + r.stars, 0);
+    station.averageRating = total / station.ratings.length;
+
+    await station.save();
+
+    res.status(200).json({ message: 'Rating added', station });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export {getStationsByOwner,nearby,addRating, addStation, getAllStations, getStationById, updateStation, deleteStation, reserveStation, freeStation };

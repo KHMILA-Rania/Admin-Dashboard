@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import Station from '../models/station.js';
 import mongoose from 'mongoose';
-import { addStation, deleteStation,getStationsByOwner, freeStation, getAllStations, getStationById, reserveStation, updateStation, nearby } from '../controllers/stationController.js';
+import { addStation, deleteStation,getStationsByOwner,addRating, freeStation, getAllStations, getStationById, reserveStation, updateStation, nearby } from '../controllers/stationController.js';
 const router=express.Router();
 
 
@@ -32,10 +32,7 @@ router.put("/:id",updateStation);
 router.delete("/:id", deleteStation)
 router.get('/owner/:ownerId', getStationsByOwner); 
 router.get('/nearby-stations', nearby)
-router.get('/test-route', (req, res) => {
-  console.log("Test route triggered");
-  res.json({ message: "Station router works!" });
-});
+router.post('/stations/:id/rate', addRating);
 
 
 router.get('/fix-stations', async (req, res) => {

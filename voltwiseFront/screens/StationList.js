@@ -11,7 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Alert } from 'react-native';
-
+import StarRating from './user/starRating';
 import GLOBALS from '../global/variables';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
@@ -37,7 +37,7 @@ const StationList = () => {
     const [reservationEndTime, setReservationEndTime] = useState(null);
     const [timeLeft, setTimeLeft] = useState('');
     const [userID, setUserID] = useState('');
-
+const [userRatings, setUserRatings] = useState({});
  useEffect(() => {
     const initialize = async () => {
       try {
@@ -174,12 +174,28 @@ const reserveStation = async (stationId) => {
     }
   };
 
-  const handleUpdateStation = (station) => {
-    closeModal();
-    // Navigate to update/edit screen with station data
-    navigation.navigate('UpdateStation', { station });
-  };
-
+  const handleRateStation = async (stationId, rating) => {
+  try {
+    const response = await axios.post(
+      `http://${GLOBALS.IP}:3000/station/stations/${stationId}/rate`,
+      {
+        userId: userID,
+        stars: rating
+      }
+    );
+    
+    // Update local state
+    setUserRatings(prev => ({ ...prev, [stationId]: rating }));
+    
+    // Refresh station data to get updated average
+    fetchStations();
+    
+    Alert.alert('Success', 'Rating submitted successfully');
+  } catch (error) {
+    console.error('Rating error:', error);
+    Alert.alert('Error', error.response?.data?.message || 'Failed to submit rating');
+  }
+};
   const handleDeleteStation = async (stationId) => {
     setDeletingStation(true);
     try {
@@ -247,7 +263,23 @@ const reserveStation = async (stationId) => {
         </View>
         
         <View style={styles.stationDetails}>
-          
+           
+           <View style={styles.ratingContainer}>
+        <Text style={styles.ratingLabel}>Average Rating:</Text>
+        <StarRating 
+          rating={item.averageRating} 
+          size={14} 
+          editable={false}
+        />
+        
+        <Text style={styles.ratingLabel}>Your Rating:</Text>
+        <StarRating
+          rating={userRatings[item._id] || 0}
+          onRate={(rating) => handleRateStation(item._id, rating)}
+          size={18}
+          editable={true}
+        />
+      </View>
           <Text style={styles.stationInfo}>
             ●  Capacity: {item.capacity} slots
           </Text>
@@ -821,6 +853,18 @@ modalContainer: {
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  ratingContainer: {
+    marginVertical: 10,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+  },
+  ratingLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 5,
   },
 });
 

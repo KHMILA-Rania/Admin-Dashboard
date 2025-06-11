@@ -75,7 +75,33 @@ const stationSchema = new mongoose.Schema({
   },
   
   // Reservation-related fields
-
+ratings: [
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    stars: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5,
+    },
+    comment: {
+      type: String,
+      required: false,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    }
+  }
+],
+averageRating: {
+  type: Number,
+  default: 0
+},
  createdAt: {
   type: Date,
   default: Date.now,
