@@ -291,7 +291,7 @@ const Team = () => {
       <ToastContainer position="top-right" autoClose={3000} />
 
       <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
-        <DialogTitle>Update User</DialogTitle>
+        <DialogTitle>Update Client</DialogTitle>
         <DialogContent>
           {["name", "age", "phoneNumber", "email", "vehicleType", "plugType"].map((field) => (
             <TextField

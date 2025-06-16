@@ -166,7 +166,7 @@ const SideBar = () => {
             >Users Data</Typography>
              <Item
              className="sideText"
-                title="List of users"
+                title="List of Clients"
                 to='/dashboard/team'
                 icon={<PeopleOutlineOutlinedIcon></PeopleOutlineOutlinedIcon>}
                 selected={selected}

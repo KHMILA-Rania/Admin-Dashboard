@@ -175,7 +175,7 @@ const Contacts = () => {
     
   
   const columns=[
-        {field:"id", headerName:"ID", flex : 0.5},
+     
       
         {field:"name", headerName:"Name",flex:1, cellClassName:"name-column--cell"},
         {field:"adress", headerName:"Adress",headerAlign:"left",align:"left"},
