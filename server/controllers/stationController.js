@@ -510,11 +510,7 @@ const addRating = async (req, res) => {
     const station = await Station.findById(stationId);
     if (!station) return res.status(404).json({ message: 'Station not found' });
 
-    // Check if user already rated
-    const alreadyRated = station.ratings.find(r => r.user.toString() === userId);
-    if (alreadyRated) {
-      return res.status(400).json({ message: 'You already rated this station' });
-    }
+   
 
     // Add rating
     station.ratings.push({ user: userId, stars, comment });

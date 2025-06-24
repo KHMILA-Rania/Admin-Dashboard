@@ -311,6 +311,7 @@ const Invoices = () => {
         ownerName: s.owner?.name || "N/A",
         ownerEmail: s.owner?.email || "N/A",
         createdAt: new Date(s.createdAt).toLocaleDateString(),
+        averageRating: s.averageRating || "N/A",
       }));
       setStations(formatted);
     } catch (error) {
@@ -341,18 +342,11 @@ const Invoices = () => {
   const handleCloseAdd = () => setOpenAddModal(false);
 
   const columns = [
-    {field:"image",headerName:'image',
-      renderCell:(params)=>{
-        return (
-        <img src={`http://localhost:3000${params.value}`} 
-         style={{ width: 30, height: 30, objectFit: "cover", borderRadius: "8px" }} ></img>
-        )
-      }
-    },
+    
 
     { field: "name", headerName: "Name", flex: 1 },
     { field: "plugType", headerName: "Plug Type", flex: 1 },
-    { field: "location", headerName: "Location", flex: 1 },
+   
     { field: "state", headerName: "State", flex: 1 },
     { field: "kilowatt", headerName: "kW", flex: 0.5 },
     { field: "chargingTime", headerName: "Charging Time", flex: 1 },
@@ -361,6 +355,19 @@ const Invoices = () => {
     { field: "ownerName", headerName: "Owner", flex: 1 },
     { field: "ownerEmail", headerName: "Email", flex: 1 },
     { field: "createdAt", headerName: "Created At", flex: 1 },
+    { field: "averageRating", headerName: "Average Rating", flex: 1 },
+    {
+      field: "image",
+      headerName: "Image",
+      flex: 1,
+      renderCell: (params) => (
+        <img
+          src={params.row.image || "https://via.placeholder.com/50"}
+          alt="Station"
+          style={{ width: 50, height: 50, borderRadius: "50%" }}
+        />
+      ),
+    },
     {
       field: "actions",
       headerName: "Actions",

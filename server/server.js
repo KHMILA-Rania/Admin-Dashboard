@@ -9,6 +9,7 @@ import complaintRoutes from './routes/complaintRoutes.js';
 import stationRoutes from './routes/stationRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
 import reservationRoutes from './routes/reservationRoutes.js';
+import commentRoutes from './routes/commentRoutes.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import nodemailer from 'nodemailer';
@@ -98,6 +99,8 @@ app.use('/partner',partnerRoutes);
 app.use("/station",stationRoutes)
 //new contact
 app.use('/contact', contactRoutes);
+//comment routes
+app.use('/comment', commentRoutes);
 
 //app.listen(PORT, () => {
   //  console.log(`Server is running on http://localhost:${PORT}`);

@@ -7,7 +7,7 @@ import GLOBALS from '../../global/variables';
 
 const UserProfile = () => {
   const navigation = useNavigation();
-
+ 
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,6 +27,8 @@ const UserProfile = () => {
   useEffect(() => {
     const fetchUserId = async () => {
       try {
+    
+
         const storedUserId = await AsyncStorage.getItem('userId');
         if (storedUserId) {
           setUserId(storedUserId);
@@ -45,10 +47,18 @@ const UserProfile = () => {
 
   useEffect(() => {
     const getUserData = async () => {
+           //neww
+         
+        const token =await AsyncStorage.getItem('token');
+        console.log("Token from AsyncStorage:", token);
       if (!userId) return;
 
       try {
-        const response = await axios.get(`http://${GLOBALS.IP}:3000/user/${userId}`);
+        const response = await axios.get(`http://${GLOBALS.IP}:3000/user/${userId}`, {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
         setUser(response.data.user);
         setFormData({
           name: response.data.user.name || '',

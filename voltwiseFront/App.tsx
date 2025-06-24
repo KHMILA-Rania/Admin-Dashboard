@@ -1,3 +1,5 @@
+
+import 'react-native-gesture-handler';
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -20,7 +22,7 @@ import {
 } from 'react-native';
 
 import AppNavigator from './navigation/AppNavigator';
-
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 type SectionProps = PropsWithChildren<{
   title: string;
 }>;
@@ -54,12 +56,14 @@ function App(): React.JSX.Element {
 
  
   return (
+  <GestureHandlerRootView style={{ flex: 1 }}>
     <AuthProvider>
       <SafeAreaView style={{ flex: 1 }}>
       <StatusBar barStyle="dark-content" />
       <AppNavigator />
     </SafeAreaView>
     </AuthProvider>
+       </GestureHandlerRootView>
   );
 }
 

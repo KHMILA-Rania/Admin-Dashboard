@@ -16,9 +16,9 @@ import GLOBALS from '../global/variables';
 import axios from 'axios';
 import { useNavigation } from '@react-navigation/native';
 import CustomBottomBar from './user/customBottomBar';
-
+import { Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { TextInput } from 'react-native-gesture-handler';
 const StationList = () => {
   const navigation = useNavigation();
   const [stations, setStations] = useState([]);
@@ -37,28 +37,143 @@ const StationList = () => {
     const [reservationEndTime, setReservationEndTime] = useState(null);
     const [timeLeft, setTimeLeft] = useState('');
     const [userID, setUserID] = useState('');
+    const [userD, setUserD] = useState(null); 
 const [userRatings, setUserRatings] = useState({});
- useEffect(() => {
+  //comments
+  const [editingComment, setEditingComment] = useState(null);
+const [editedText, setEditedText] = useState('');
+  const [commentsModalVisible, setCommentsModalVisible] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [selectedStationId, setSelectedStationId] = useState(null);
+  const [newCommentText, setNewCommentText] = useState('');
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const baseurl=`http://${GLOBALS.IP}:3000`;
+   
+  const fetchComments = async (stationId) => {
+  try {
+    const token = await AsyncStorage.getItem('token'); 
+    setLoadingComments(true);
+    const response = await axios.get(
+      `${baseurl}/comment/station/${stationId}`,{
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    setComments(response.data);   
+    console.log(response.data)         // Array of comments
+  } catch (err) {
+    console.log('Error fetching comments', err);
+  } finally {
+    setLoadingComments(false);
+  }
+};
+const openCommentsModal = async (stationId) => {
+setSelectedStationId(stationId);  // for future comment add
+  setCommentsModalVisible(true);
+  await fetchComments(stationId);
+};
+
+const closeCommentsModal = () => {
+  setCommentsModalVisible(false);
+  setComments([]);
+  setSelectedStationId(null);         // optional: clear when closed
+};
+
+const submitComment = async () => {
+  if (!newCommentText.trim()) return;
+
+  try {
+    setSubmittingComment(true);
+
+    const token = await AsyncStorage.getItem('token'); // adjust based on your storage
+    await axios.post(
+      `${baseurl}/comment/add`,
+      {
+        station: selectedStationId,
+        commentText: newCommentText,
+        user: userID, // Use the stored user ID
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    setNewCommentText('');
+    await fetchComments(selectedStationId); // refresh the list
+  } catch (error) {
+    console.error("Error submitting comment", error);
+  } finally {
+    setSubmittingComment(false);
+  }
+};
+const deleteComment = async (id ) => {
+  console.log(`${baseurl}/comment/${id}`);
+  console.log('User ID for deletion:', userID);
+  console.log('🧨 deleteComment called with ID:', id);
+  const token = await AsyncStorage.getItem('token');
+  
+  try {
+    await axios.delete(`${baseurl}/comment/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { userId: userID }
+    });
+
+    // Update UI
+    setComments((prev) => prev.filter((c) => c._id !== id));
+  } catch (err) {
+    console.error('Error deleting comment:', err);
+  }
+};
+
+const userId = AsyncStorage.getItem('userId')
+console.log('User data:', userId);
+const startEditingComment = (comment) => {
+  setEditingComment(comment);
+  setEditedText(comment.commentText);
+};
+const submitEdit = async () => {
+   const token = await AsyncStorage.getItem('token');
+  try {
+    const res = await axios.put(
+      `${baseurl}/comment/${editingComment._id}`,
+      {     commentText: editedText,
+    userId: userID, },
+     
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    // Update local state
+    setComments((prev) =>
+      prev.map((c) =>
+        c._id === editingComment._id ? { ...c, commentText: editedText } : c
+      )
+    );
+    setEditingComment(null);
+    setEditedText('');
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+useEffect(() => {
     const initialize = async () => {
       try {
-        const storedToken = await AsyncStorage.getItem('token');
-        const storedUserType = await AsyncStorage.getItem('userType');
+        //const storedToken = await AsyncStorage.getItem('token');
+        //console.log(storedToken)
+       // const storedUserType = await AsyncStorage.getItem('userType');
         const storedUserId = await AsyncStorage.getItem('userId');
         setUserID(storedUserId);
         console.log('User ID:', storedUserId);
 
-        if (storedToken) {
-          const userData = JSON.parse(storedToken);
-         // setUserName(userData?.name || 'User');
-        }
-        if (storedUserType) {
-         // setUserType(storedUserType);
-        }
-
+     
        
      
       } catch (error) {
-        console.error('Error loading user data:', error);
+        console.error(error);
       }
  };
     initialize();
@@ -248,6 +363,7 @@ const reserveStation = async (stationId) => {
     const [lon, lat] = item.location.coordinates; // Note: GeoJSON format is [longitude, latitude]
     
     return (
+      
        <View style={styles.container}>
      
 
@@ -271,14 +387,23 @@ const reserveStation = async (stationId) => {
           size={14} 
           editable={false}
         />
-        
-        <Text style={styles.ratingLabel}>Your Rating:</Text>
+         <Text style={styles.ratingLabel}>Your Rating:</Text>
         <StarRating
           rating={userRatings[item._id] || 0}
           onRate={(rating) => handleRateStation(item._id, rating)}
           size={18}
           editable={true}
         />
+         <Pressable
+    onPress={() => openCommentsModal(item._id)}
+    style={styles.viewCommentsBtn}
+  >
+    <Text style={styles.viewCommentsText}>💬 View reviews</Text>
+  </Pressable>
+
+
+
+       
       </View>
           <Text style={styles.stationInfo}>
             ●  Capacity: {item.capacity} slots
@@ -319,6 +444,90 @@ const reserveStation = async (stationId) => {
           </View>
         </View>
       </View>
+        
+<Modal
+  visible={commentsModalVisible}
+  animationType="slide"
+  transparent
+  onRequestClose={closeCommentsModal}
+>
+  <View style={styles.modalBackdrop}>
+    <View style={styles.modalCard}>
+      <Text style={styles.modalTitle}>💬 Station reviews</Text>
+
+      {loadingComments ? (
+        <ActivityIndicator size="large" color="#007AFF" />
+      ) : comments.length === 0 ? (
+        <Text style={styles.noCommentsText}>No comments yet. Be the first!</Text>
+      ) : (
+        <FlatList
+  data={comments}
+  keyExtractor={(c) => c._id}
+  renderItem={({ item: c }) => (
+    <View style={styles.commentRow}>
+      <Text style={styles.commentUser}>{c.user?.name ?? 'Anonymous'}</Text>
+      <Text style={styles.commentText}>{c.commentText}</Text>
+      <Text style={styles.commentDate}>
+        {new Date(c.createdAt).toLocaleDateString()}
+      </Text>
+
+      {c.user?._id === userID && (
+        <View style={styles.actionsRow}>
+          <Pressable onPress={() => startEditingComment(c)}>
+            <Text style={styles.editBtn}>🖊️</Text>
+          </Pressable>
+          <Pressable onPress={() => deleteComment(c._id)}>
+            <Text style={styles.deleteBtn}>🗑️</Text>
+          </Pressable>
+        </View>
+      )}
+    </View>
+  )}
+
+/>
+
+      )}
+       {editingComment && (
+        <View style={styles.editBox}>
+          <TextInput
+            value={editedText}
+            onChangeText={setEditedText}
+            multiline
+            style={styles.commentInput}
+          />
+          <Pressable style={styles.submitBtn} onPress={submitEdit}>
+            <Text style={styles.submitBtnText}>Save Changes</Text>
+          </Pressable>
+        </View>
+      )}
+
+      <TextInput
+        value={newCommentText}
+        onChangeText={setNewCommentText}
+        placeholder="Write your review..."
+        placeholderTextColor={'black'}
+        style={styles.commentInput}
+        multiline
+      />
+
+      <Pressable
+        style={[styles.submitBtn, submittingComment && { opacity: 0.7 }]}
+        onPress={submitComment}
+        disabled={submittingComment}
+      >
+        <Text style={styles.submitBtnText}>
+          {submittingComment ? 'Sending...' : 'Submit Review'}
+        </Text>
+      </Pressable>
+
+      <Pressable style={styles.closeBtn} onPress={closeCommentsModal}>
+        <Text style={styles.closeBtnText}>Close</Text>
+      </Pressable>
+    </View>
+  </View>
+</Modal>
+
+
       </View>
     );
   };
@@ -335,6 +544,10 @@ const reserveStation = async (stationId) => {
       state: station.state,
       source: stationDetails ? 'API' : 'cached'
     });
+
+
+
+
 
     return (
       <Modal
@@ -463,6 +676,9 @@ const reserveStation = async (stationId) => {
       </Modal>
     );
   };
+
+
+
 
   return (
     <View style={styles.container}>
@@ -866,6 +1082,105 @@ modalContainer: {
     color: '#666',
     marginTop: 5,
   },
+  viewCommentsBtn: {
+  marginLeft: 8,
+  paddingHorizontal: 6,
+  paddingVertical: 2,
+  borderRadius: 4,
+  backgroundColor: '#E8E8E8',
+},
+viewCommentsText: { fontSize: 12 },
+
+ modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCard: {
+    width: '90%',
+    maxHeight: '85%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#333',
+  },
+  noCommentsText: {
+    textAlign: 'center',
+    fontStyle: 'italic',
+    color: '#888',
+    marginBottom: 10,
+  },
+  commentRow: {
+    borderBottomWidth: 1,
+    borderColor: '#eee',
+    paddingVertical: 8,
+  },
+  commentUser: {
+    fontWeight: 'bold',
+    fontSize: 14,
+    color: '#444',
+  },
+  commentText: {
+    fontSize: 15,
+    color: '#222',
+    marginVertical: 4,
+  },
+  commentDate: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'right',
+  },
+  commentInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 15,
+    fontSize: 15,
+    minHeight: 60,
+    textAlignVertical: 'top',
+  },
+  submitBtn: {
+    marginTop: 12,
+    backgroundColor: '#34a4a7',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  submitBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  closeBtn: {
+    marginTop: 10,
+    alignItems: 'center',
+  },
+  closeBtnText: {
+    color: '#34a4a7',
+    fontSize: 16,
+  },
+  actionsRow: {
+  flexDirection: 'row',
+  justifyContent: 'flex-end',
+  gap: 15,
+  marginTop: 4,
+},
+editBtn: {
+  color: '#599197',
+  fontSize: 18,
+},
+deleteBtn: {
+  color: 'red',
+  fontSize: 18,
+},
 });
 
 export default StationList;

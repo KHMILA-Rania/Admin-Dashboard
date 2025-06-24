@@ -5,7 +5,7 @@ import GLOBALS from '../global/variables';
 const API_URL = `http://${GLOBALS.IP}:3000/auth`;
 
 const AuthService = {
-  login: async (email, password) => {
+  loginx: async (email, password) => {
     try {
       const response = await axios.post(`${API_URL}/login`, {
         email: email.trim(),
@@ -40,6 +40,55 @@ const AuthService = {
   }
   
 ,  
+login: async (email, password) => {
+  try {
+    
+    const response = await axios.post(`${API_URL}/login`, {
+      email: email.trim(),
+      password: password.trim(),
+    });
+
+    console.log('Response Data:', response.data);
+
+    if (response.data.status === 'ok' || response.data.status === 200) {
+      // ✅ FIX: Correctly extract token and user
+      const  token= response.data.data.token;
+      const user = response.data.data.user;  // Ensure this is the correct path to user data
+
+      if (!user?._id) {
+        console.error("User object is missing _id!");
+        return { success: false, message: "Login failed: user ID missing." };
+      }
+
+      const userId = user._id;
+   
+      const userType = user.role?.[0]?.name || 'user';
+
+      // ✅ Store token and user info
+      await AsyncStorage.setItem('token', token);
+      console.log('Token stored:', token);
+      console.log( response.data.data.token)
+      await AsyncStorage.setItem('user', user); 
+      console.log('user', user)
+     await asyncStorage.setItem('userData', JSON.stringify(user)); // Store user data as a string
+      await AsyncStorage.setItem('isLoggedIn', 'true');
+      await AsyncStorage.setItem('userType', userType);
+      await AsyncStorage.setItem('userId', userId);  // ✅ no longer undefined
+
+      console.log('Logged in successfully');
+      console.log('User ID:', userId);
+
+      return { success: true, token, userId };
+    } else {
+      return { success: false, message: 'Login failed.' };
+    }
+  } catch (error) {
+    console.error('Error during login:', error);
+    return { success: false, message: 'An error occurred during login.' };
+  }
+}
+
+,
 
   getUserById: async () => {
     try {

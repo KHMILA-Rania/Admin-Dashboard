@@ -169,7 +169,7 @@ const Stations = () => {
             style={styles.detailsButton}
             onPress={() => handleViewDetails(item)}
           >
-            <Text style={styles.detailsButtonText}>View Details</Text>
+            <Text style={styles.detailsButtonText}>Actions</Text>
           </TouchableOpacity>
         </View>
       </View>

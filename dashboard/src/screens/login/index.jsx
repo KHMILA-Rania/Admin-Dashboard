@@ -20,7 +20,7 @@ const AdminLogin = () => {
       });
 
       if (response.status === 200) {
-        const userData = response.data.data;
+        const userData = response.data.data.user;
         if (userData.role.some(role => role.name === 'admin')) {
           localStorage.setItem('user', JSON.stringify(userData));
           navigate('/dashboard/dash');

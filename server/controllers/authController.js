@@ -51,7 +51,7 @@ catch(err) {
 
 
 
-const login = async (req, res) => {
+const login= async (req, res) => {
   try {
     console.log('Request body:', req.body);
     const { email, password } = req.body;
@@ -106,7 +106,11 @@ const login = async (req, res) => {
     return res.status(200).json({
       status: 200,
       message: "Login successful",
-      data: account,
+//new
+       data: {
+    token,       // ✅ Include the JWT
+    user: account    // ✅ Keep user/account data as `user`
+  },
       accountType: isUser ? 'user' : 'partner'
     });
     

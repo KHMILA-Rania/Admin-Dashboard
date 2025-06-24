@@ -55,14 +55,16 @@ const HandleSubmit = async () => {
     console.log('Response Data:', res.data);
 
     if (res.data.status === 'ok' || res.data.status === 200) {
+      console.log(res);
       console.log('Logged in successfully');
       Alert.alert('Logged In Successfully');
 
       // Store user data
-      await AsyncStorage.setItem('token', JSON.stringify(res.data.data));
+      //new
+      await AsyncStorage.setItem('token', JSON.stringify(res.data.data.token));
       await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
       
-      const userId = res.data.data._id;
+      const userId = res.data.data.user._id;
       console.log('User ID:', userId);
       await AsyncStorage.setItem('userId', userId);
       
