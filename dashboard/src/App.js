@@ -18,6 +18,7 @@ import Pie from "./screens/pie";
 import Line from "./screens/line";
 import Geo from "./screens/geo";
 import AdminLogin from "./screens/login";
+import Comment from "./screens/comments";
 function App() {
   const [theme , colorMode]=useMode();
   return (
@@ -42,6 +43,7 @@ function App() {
                         <Route path="bar" element={<Bar></Bar>}> </Route>
                         <Route path="line" element={<Line></Line>}></Route>
                         <Route path="geography" element={<Geo></Geo>}></Route>
+                          <Route path="comments" element={<Comment></Comment>}></Route>
                         <Route path="pie" element={<Pie></Pie>}></Route>
                         <Route path="faq" element={<Faq></Faq>}></Route>
 

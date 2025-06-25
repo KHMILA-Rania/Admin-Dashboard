@@ -107,7 +107,7 @@ const Faq = () => {
           return (
             <Accordion
               key={complaint._id}
-              defaultExpanded
+              
               sx={{
                 backgroundColor: getBackgroundColor(complaint.status),
                 marginBottom: "10px",

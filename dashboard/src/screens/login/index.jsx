@@ -21,8 +21,10 @@ const AdminLogin = () => {
 
       if (response.status === 200) {
         const userData = response.data.data.user;
+         const token = response.data.data.token;
         if (userData.role.some(role => role.name === 'admin')) {
           localStorage.setItem('user', JSON.stringify(userData));
+                localStorage.setItem("token", token);
           navigate('/dashboard/dash');
         } else {
           setErrorMessage('You are not authorized to access this page.');

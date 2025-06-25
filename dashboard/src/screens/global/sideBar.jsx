@@ -205,6 +205,13 @@ const SideBar = () => {
                 selected={selected}
                 setSelected={setSelected}
             ></Item>
+              <Item
+                title="Comments"
+                to='/dashboard/comments'
+                icon={<HelpOutlineOutlinedIcon></HelpOutlineOutlinedIcon>}
+                selected={selected}
+                setSelected={setSelected}
+            ></Item>
              <Item
                 title="Calendar"
                 to='/dashboard/calendar'
