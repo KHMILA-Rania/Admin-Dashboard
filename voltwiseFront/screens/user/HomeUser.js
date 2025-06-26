@@ -532,7 +532,7 @@ const handleLocationError = (error) => {
       console.log("User plug type:", response.data.user.plugType);
       return response.data.user.plugType;
     } catch (error) {
-      console.error("Error fetching user data:", error);
+      
       return null;
     }
   };

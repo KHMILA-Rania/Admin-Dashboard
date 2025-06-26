@@ -23,6 +23,7 @@ const Team = () => {
   const [roles, setRoles] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [formData, setFormData] = useState({
     name: "",
@@ -45,6 +46,12 @@ const Team = () => {
       plugType: user.plugType,
       vehicleType: user.vehicleType,
     }));
+    
+    const filteredUsers = users.filter((user) =>
+  user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  user.phone.toLowerCase().includes(searchQuery.toLowerCase())
+);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -285,7 +292,18 @@ const Team = () => {
           },
         }}
       >
-        <DataGrid rows={users} columns={columns} getRowId={(row) => row.id} />
+        <Box display="flex" justifyContent="flex-end" mb={2}>
+  <TextField
+    label="Search Client"
+    variant="outlined"
+    size="small"
+    onChange={(e) => setSearchQuery(e.target.value)}
+    value={searchQuery}
+    sx={{ width: 300 }}
+  />
+</Box>
+       <DataGrid rows={filteredUsers} columns={columns} getRowId={(row) => row.id} />
+
       </Box>
 
       <ToastContainer position="top-right" autoClose={3000} />

@@ -19,6 +19,7 @@ import CustomBottomBar from './user/customBottomBar';
 import { Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TextInput } from 'react-native-gesture-handler';
+
 const StationList = () => {
   const navigation = useNavigation();
   const [stations, setStations] = useState([]);
@@ -33,15 +34,20 @@ const StationList = () => {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState(null);
   const [deletingStation, setDeletingStation] = useState(false);
-   const [activeReservation, setActiveReservation] = useState(null);
-    const [reservationEndTime, setReservationEndTime] = useState(null);
-    const [timeLeft, setTimeLeft] = useState('');
-    const [userID, setUserID] = useState('');
-    const [userD, setUserD] = useState(null); 
-const [userRatings, setUserRatings] = useState({});
+  const [activeReservation, setActiveReservation] = useState(null);
+  const [reservationEndTime, setReservationEndTime] = useState(null);
+  const [timeLeft, setTimeLeft] = useState('');
+  const [userID, setUserID] = useState('');
+  const [userD, setUserD] = useState(null); 
+  const [userRatings, setUserRatings] = useState({});
+  
+  // Individual ratings modal states
+  const [ratingsModalVisible, setRatingsModalVisible] = useState(false);
+  const [selectedStationForRatings, setSelectedStationForRatings] = useState(null);
+  
   //comments
   const [editingComment, setEditingComment] = useState(null);
-const [editedText, setEditedText] = useState('');
+  const [editedText, setEditedText] = useState('');
   const [commentsModalVisible, setCommentsModalVisible] = useState(false);
   const [comments, setComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -51,203 +57,199 @@ const [editedText, setEditedText] = useState('');
   const baseurl=`http://${GLOBALS.IP}:3000`;
    
   const fetchComments = async (stationId) => {
-  try {
-    const token = await AsyncStorage.getItem('token'); 
-    setLoadingComments(true);
-    const response = await axios.get(
-      `${baseurl}/comment/station/${stationId}`,{
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+    try {
+      const token = await AsyncStorage.getItem('token'); 
+      setLoadingComments(true);
+      const response = await axios.get(
+        `${baseurl}/comment/station/${stationId}`,{
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setComments(response.data);   
+      console.log(response.data)         // Array of comments
+    } catch (err) {
+      console.log('Error fetching comments', err);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const openCommentsModal = async (stationId) => {
+    setSelectedStationId(stationId);  // for future comment add
+    setCommentsModalVisible(true);
+    await fetchComments(stationId);
+  };
+
+  const closeCommentsModal = () => {
+    setCommentsModalVisible(false);
+    setComments([]);
+    setSelectedStationId(null);         // optional: clear when closed
+  };
+
+  // New function to open individual ratings modal
+  const openRatingsModal = (station) => {
+    setSelectedStationForRatings(station);
+    setRatingsModalVisible(true);
+  };
+
+  const closeRatingsModal = () => {
+    setRatingsModalVisible(false);
+    setSelectedStationForRatings(null);
+  };
+
+  // Function to render individual rating item
+  const renderRatingItem = ({ item }) => {
+    const ratingDate = new Date(item.createdAt).toLocaleDateString();
+    
+    return (
+      <View style={styles.ratingItem}>
+        <View style={styles.ratingHeader}>
+          <Text style={styles.ratingUser}>Anonymous User</Text>
+          <Text style={styles.ratingDate}>{ratingDate}</Text>
+        </View>
+        <View style={styles.ratingStars}>
+          <StarRating 
+            rating={item.stars} 
+            size={16} 
+            editable={false}
+          />
+          <Text style={styles.ratingValue}>({item.stars}/5)</Text>
+        </View>
+      </View>
     );
-    setComments(response.data);   
-    console.log(response.data)         // Array of comments
-  } catch (err) {
-    console.log('Error fetching comments', err);
-  } finally {
-    setLoadingComments(false);
-  }
-};
-const openCommentsModal = async (stationId) => {
-setSelectedStationId(stationId);  // for future comment add
-  setCommentsModalVisible(true);
-  await fetchComments(stationId);
-};
+  };
 
-const closeCommentsModal = () => {
-  setCommentsModalVisible(false);
-  setComments([]);
-  setSelectedStationId(null);         // optional: clear when closed
-};
+  const submitComment = async () => {
+    if (!newCommentText.trim()) return;
 
-const submitComment = async () => {
-  if (!newCommentText.trim()) return;
+    try {
+      setSubmittingComment(true);
 
-  try {
-    setSubmittingComment(true);
-
-    const token = await AsyncStorage.getItem('token'); // adjust based on your storage
-    await axios.post(
-      `${baseurl}/comment/add`,
-      {
-        station: selectedStationId,
-        commentText: newCommentText,
-        user: userID, // Use the stored user ID
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const token = await AsyncStorage.getItem('token'); // adjust based on your storage
+      await axios.post(
+        `${baseurl}/comment/add`,
+        {
+          station: selectedStationId,
+          commentText: newCommentText,
+          user: userID, // Use the stored user ID
         },
-      }
-    );
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    setNewCommentText('');
-    await fetchComments(selectedStationId); // refresh the list
-  } catch (error) {
-    console.error("Error submitting comment", error);
-  } finally {
-    setSubmittingComment(false);
-  }
-};
-const deleteComment = async (id ) => {
-  console.log(`${baseurl}/comment/${id}`);
-  console.log('User ID for deletion:', userID);
-  console.log('🧨 deleteComment called with ID:', id);
-  const token = await AsyncStorage.getItem('token');
+      setNewCommentText('');
+      await fetchComments(selectedStationId); // refresh the list
+    } catch (error) {
+      console.error("Error submitting comment", error);
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
+  const deleteComment = async (id ) => {
+    console.log(`${baseurl}/comment/${id}`);
+    console.log('User ID for deletion:', userID);
+    console.log('🧨 deleteComment called with ID:', id);
+    const token = await AsyncStorage.getItem('token');
+    
+    try {
+      await axios.delete(`${baseurl}/comment/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { userId: userID }
+      });
+
+      // Update UI
+      setComments((prev) => prev.filter((c) => c._id !== id));
+    } catch (err) {
+      console.error('Error deleting comment:', err);
+    }
+  };
+
+  const userId = AsyncStorage.getItem('userId')
+  console.log('User data:', userId);
+  const startEditingComment = (comment) => {
+    setEditingComment(comment);
+    setEditedText(comment.commentText);
+  };
   
-  try {
-    await axios.delete(`${baseurl}/comment/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-      data: { userId: userID }
-    });
+  const submitEdit = async () => {
+    const token = await AsyncStorage.getItem('token');
+    try {
+      const res = await axios.put(
+        `${baseurl}/comment/${editingComment._id}`,
+        { commentText: editedText, userId: userID, },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    // Update UI
-    setComments((prev) => prev.filter((c) => c._id !== id));
-  } catch (err) {
-    console.error('Error deleting comment:', err);
-  }
-};
+      // Update local state
+      setComments((prev) =>
+        prev.map((c) =>
+          c._id === editingComment._id ? { ...c, commentText: editedText } : c
+        )
+      );
+      setEditingComment(null);
+      setEditedText('');
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-const userId = AsyncStorage.getItem('userId')
-console.log('User data:', userId);
-const startEditingComment = (comment) => {
-  setEditingComment(comment);
-  setEditedText(comment.commentText);
-};
-const submitEdit = async () => {
-   const token = await AsyncStorage.getItem('token');
-  try {
-    const res = await axios.put(
-      `${baseurl}/comment/${editingComment._id}`,
-      {     commentText: editedText,
-    userId: userID, },
-     
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-
-    // Update local state
-    setComments((prev) =>
-      prev.map((c) =>
-        c._id === editingComment._id ? { ...c, commentText: editedText } : c
-      )
-    );
-    setEditingComment(null);
-    setEditedText('');
-  } catch (err) {
-    console.error(err);
-  }
-};
-
-useEffect(() => {
+  useEffect(() => {
     const initialize = async () => {
       try {
-        //const storedToken = await AsyncStorage.getItem('token');
-        //console.log(storedToken)
-       // const storedUserType = await AsyncStorage.getItem('userType');
         const storedUserId = await AsyncStorage.getItem('userId');
         setUserID(storedUserId);
         console.log('User ID:', storedUserId);
-
-     
-       
-     
       } catch (error) {
         console.error(error);
       }
- };
+    };
     initialize();
   }, []);
 
-
- const fetchStations = async () => {
-  try {
-    const response = await axios.get(`http://${GLOBALS.IP}:3000/station`);
-    setStations(response.data);
-    console.log('Fetched stations:', response.data);
-  } catch (error) {
-    Alert.alert('Error', 'Failed to load stations');
-    console.error(error);
-  } finally {
-    setLoading(false);
-  }
-};
-
-const reserveStationn = async (stationId) => {
-  try {
-    const response = await axios.post(
-       `http://${GLOBALS.IP}:3000/reservation/${stationId}/reserve`,
-              { userId: userID },
-     
-    );
-    console.log('userid :', userID);
-
-    Alert.alert('Reservation Successful', response.data.message);
-
-    setActiveReservation(response.data.station);
-    setReservationEndTime(new Date(response.data.station.reservationExpiresAt));
-
-    fetchStations(); // Refresh station data
-  } catch (error) {
-    console.error('Error reserving station:', error);
-    if (error.response) {
-      Alert.alert('Reservation Failed', error.response.data.message || 'Failed to reserve station');
-    } else {
-      Alert.alert('Error', 'Could not connect to server');
+  const fetchStations = async () => {
+    try {
+      const response = await axios.get(`http://${GLOBALS.IP}:3000/station`);
+      setStations(response.data);
+      console.log('Fetched stations:', response.data);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to load stations');
+      console.error(error);
+    } finally {
+      setLoading(false);
     }
-  }
-};
-const reserveStation = async (stationId) => {
-  try {
-    const response = await axios.post(
-      `http://${GLOBALS.IP}:3000/reservation/${stationId}/reserve`,
-      { userId: userID }
-    );
+  };
 
-    console.log('Reservation response:', response.data);
-    console.log('userid :', userID);
-
-    Alert.alert('Reservation Successful', response.data.message);
-
-    // One of these could be throwing
-    setActiveReservation(response.data.station);
-   
-
-    fetchStations(); // Refresh station data
-  } catch (error) {
-    
-
-    if (error.response) {
-      Alert.alert(
-        'Reservation Failed',
-        error.response.data.message || 'Failed to reserve station'
+  const reserveStation = async (stationId) => {
+    try {
+      const response = await axios.post(
+        `http://${GLOBALS.IP}:3000/reservation/${stationId}/reserve`,
+        { userId: userID }
       );
-    } else {
-      Alert.alert('Error', 'Could not connect to server');
-    }
-  }
-};
 
+      console.log('Reservation response:', response.data);
+      console.log('userid :', userID);
+
+      Alert.alert('Reservation Successful', response.data.message);
+
+      setActiveReservation(response.data.station);
+      fetchStations(); // Refresh station data
+    } catch (error) {
+      if (error.response) {
+        Alert.alert(
+          'Reservation Failed',
+          error.response.data.message || 'Failed to reserve station'
+        );
+      } else {
+        Alert.alert('Error', 'Could not connect to server');
+      }
+    }
+  };
 
   useEffect(() => {
     let timer;
@@ -290,27 +292,28 @@ const reserveStation = async (stationId) => {
   };
 
   const handleRateStation = async (stationId, rating) => {
-  try {
-    const response = await axios.post(
-      `http://${GLOBALS.IP}:3000/station/stations/${stationId}/rate`,
-      {
-        userId: userID,
-        stars: rating
-      }
-    );
-    
-    // Update local state
-    setUserRatings(prev => ({ ...prev, [stationId]: rating }));
-    
-    // Refresh station data to get updated average
-    fetchStations();
-    
-    Alert.alert('Success', 'Rating submitted successfully');
-  } catch (error) {
-    console.error('Rating error:', error);
-    Alert.alert('Error', error.response?.data?.message || 'Failed to submit rating');
-  }
-};
+    try {
+      const response = await axios.post(
+        `http://${GLOBALS.IP}:3000/station/stations/${stationId}/rate`,
+        {
+          userId: userID,
+          stars: rating
+        }
+      );
+      
+      // Update local state
+      setUserRatings(prev => ({ ...prev, [stationId]: rating }));
+      
+      // Refresh station data to get updated average
+      fetchStations();
+      
+      Alert.alert('Success', 'Rating submitted successfully');
+    } catch (error) {
+      console.error('Rating error:', error);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to submit rating');
+    }
+  };
+
   const handleDeleteStation = async (stationId) => {
     setDeletingStation(true);
     try {
@@ -363,171 +366,215 @@ const reserveStation = async (stationId) => {
     const [lon, lat] = item.location.coordinates; // Note: GeoJSON format is [longitude, latitude]
     
     return (
-      
-       <View style={styles.container}>
-     
+      <View style={styles.container}>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.stationName}>{item.name}</Text>
+            <View style={styles.statusBadge}>
+              <Text style={styles.statusText}>
+                {item.state === 'active' ? '🟢 Active' : '🔴 Inactive'}
+              </Text>
+            </View>
+          </View>
+          
+          <View style={styles.stationDetails}>
+            <View style={styles.ratingContainer}>
+              <Text style={styles.ratingLabel}>Average Rating:</Text>
+              <StarRating 
+                rating={item.averageRating} 
+                size={14} 
+                editable={false}
+              />
+              <Text style={styles.ratingValue}>({item.averageRating}/5)</Text>
+              
+              {/* Button to view all individual ratings */}
+              <Pressable
+                onPress={() => openRatingsModal(item)}
+                style={styles.viewRatingsBtn}
+              >
+                <Text style={styles.viewRatingsText}>
+                  👥 View All Ratings ({item.ratings ? item.ratings.length : 0})
+                </Text>
+              </Pressable>
 
-      <View style={styles.card}>
-        
-        <View style={styles.cardHeader}>
-          <Text style={styles.stationName}>{item.name}</Text>
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>
-              {item.state === 'active' ? '🟢 Active' : '🔴 Inactive'}
+              <Text style={styles.ratingLabel}>Your Rating:</Text>
+              <StarRating
+                rating={userRatings[item._id] || 0}
+                onRate={(rating) => handleRateStation(item._id, rating)}
+                size={18}
+                editable={true}
+              />
+              
+              <Pressable
+                onPress={() => openCommentsModal(item._id)}
+                style={styles.viewCommentsBtn}
+              >
+                <Text style={styles.viewCommentsText}>💬 View reviews</Text>
+              </Pressable>
+            </View>
+            
+            <Text style={styles.stationInfo}>
+              ●  Capacity: {item.capacity} slots
+            </Text>
+            <Text style={styles.stationInfo}>
+              ●  Plug Type: {item.plugType}
+            </Text>
+            <Text style={styles.stationInfo}>
+              ●  Power: {item.kilowatt}kW
+            </Text>
+            <Text style={styles.stationInfo}>
+              💰 Price: ${item.pricePerKWh}/kWh
+            </Text>
+            <Text style={styles.stationInfo}>
+              ● Available Slots: {item.availableSlots}/{item.capacity}
             </Text>
           </View>
-        </View>
-        
-        <View style={styles.stationDetails}>
-           
-           <View style={styles.ratingContainer}>
-        <Text style={styles.ratingLabel}>Average Rating:</Text>
-        <StarRating 
-          rating={item.averageRating} 
-          size={14} 
-          editable={false}
-        />
-         <Text style={styles.ratingLabel}>Your Rating:</Text>
-        <StarRating
-          rating={userRatings[item._id] || 0}
-          onRate={(rating) => handleRateStation(item._id, rating)}
-          size={18}
-          editable={true}
-        />
-         <Pressable
-    onPress={() => openCommentsModal(item._id)}
-    style={styles.viewCommentsBtn}
-  >
-    <Text style={styles.viewCommentsText}>💬 View reviews</Text>
-  </Pressable>
 
-
-
-       
-      </View>
-          <Text style={styles.stationInfo}>
-            ●  Capacity: {item.capacity} slots
-          </Text>
-          <Text style={styles.stationInfo}>
-            ●  Plug Type: {item.plugType}
-          </Text>
-          <Text style={styles.stationInfo}>
-            ●  Power: {item.kilowatt}kW
-          </Text>
-          <Text style={styles.stationInfo}>
-            💰 Price: ${item.pricePerKWh}/kWh
-          </Text>
-          <Text style={styles.stationInfo}>
-            ● Available Slots: {item.availableSlots}/{item.capacity}
-          </Text>
-        </View>
-
-        <View style={styles.cardFooter}>
-          <Text style={styles.supportedVehicles}>
-            Supports: {Array.isArray(item.supportedVehicles) 
-              ? item.supportedVehicles.join(', ') 
-              : item.supportedVehicles}
-          </Text>
-          <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.detailsButton}
-            onPress={() => handleViewDetails(item)}
-          >
-            <Text style={styles.detailsButtonText}>View Details</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => reserveStation(item._id)}
-          >
-            <Text style={styles.detailsButtonText}>Reserve </Text>
-          </TouchableOpacity>
+          <View style={styles.cardFooter}>
+            <Text style={styles.supportedVehicles}>
+              Supports: {Array.isArray(item.supportedVehicles) 
+                ? item.supportedVehicles.join(', ') 
+                : item.supportedVehicles}
+            </Text>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={styles.detailsButton}
+                onPress={() => handleViewDetails(item)}
+              >
+                <Text style={styles.detailsButtonText}>View Details</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => reserveStation(item._id)}
+              >
+                <Text style={styles.detailsButtonText}>Reserve </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
-        
-<Modal
-  visible={commentsModalVisible}
-  animationType="slide"
-  transparent
-  onRequestClose={closeCommentsModal}
->
-  <View style={styles.modalBackdrop}>
-    <View style={styles.modalCard}>
-      <Text style={styles.modalTitle}>💬 Station reviews</Text>
 
-      {loadingComments ? (
-        <ActivityIndicator size="large" color="#007AFF" />
-      ) : comments.length === 0 ? (
-        <Text style={styles.noCommentsText}>No comments yet. Be the first!</Text>
-      ) : (
-        <FlatList
-  data={comments}
-  keyExtractor={(c) => c._id}
-  renderItem={({ item: c }) => (
-    <View style={styles.commentRow}>
-      <Text style={styles.commentUser}>{c.user?.name ?? 'Anonymous'}</Text>
-      <Text style={styles.commentText}>{c.commentText}</Text>
-      <Text style={styles.commentDate}>
-        {new Date(c.createdAt).toLocaleDateString()}
-      </Text>
+        {/* Individual Ratings Modal */}
+        <Modal
+          visible={ratingsModalVisible}
+          animationType="slide"
+          transparent
+          onRequestClose={closeRatingsModal}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>
+                ⭐ Individual Ratings for {selectedStationForRatings?.name}
+              </Text>
+              
+              {selectedStationForRatings?.ratings && selectedStationForRatings.ratings.length > 0 ? (
+                <>
+                  <View style={styles.ratingSummary}>
+                    <Text style={styles.ratingSummaryText}>
+                      Average: {selectedStationForRatings.averageRating}/5 
+                      ({selectedStationForRatings.ratings.length} ratings)
+                    </Text>
+                  </View>
+                  
+                  <FlatList
+                    data={selectedStationForRatings.ratings}
+                    keyExtractor={(rating) => rating._id}
+                    renderItem={renderRatingItem}
+                    style={styles.ratingsList}
+                    showsVerticalScrollIndicator={false}
+                  />
+                </>
+              ) : (
+                <Text style={styles.noRatingsText}>No ratings yet. Be the first to rate!</Text>
+              )}
 
-      {c.user?._id === userID && (
-        <View style={styles.actionsRow}>
-          <Pressable onPress={() => startEditingComment(c)}>
-            <Text style={styles.editBtn}>🖊️</Text>
-          </Pressable>
-          <Pressable onPress={() => deleteComment(c._id)}>
-            <Text style={styles.deleteBtn}>🗑️</Text>
-          </Pressable>
-        </View>
-      )}
-    </View>
-  )}
+              <Pressable style={styles.closeBtn} onPress={closeRatingsModal}>
+                <Text style={styles.closeBtnText}>Close</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
 
-/>
+        {/* Comments Modal */}
+        <Modal
+          visible={commentsModalVisible}
+          animationType="slide"
+          transparent
+          onRequestClose={closeCommentsModal}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>💬 Station reviews</Text>
 
-      )}
-       {editingComment && (
-        <View style={styles.editBox}>
-          <TextInput
-            value={editedText}
-            onChangeText={setEditedText}
-            multiline
-            style={styles.commentInput}
-          />
-          <Pressable style={styles.submitBtn} onPress={submitEdit}>
-            <Text style={styles.submitBtnText}>Save Changes</Text>
-          </Pressable>
-        </View>
-      )}
+              {loadingComments ? (
+                <ActivityIndicator size="large" color="#007AFF" />
+              ) : comments.length === 0 ? (
+                <Text style={styles.noCommentsText}>No comments yet. Be the first!</Text>
+              ) : (
+                <FlatList
+                  data={comments}
+                  keyExtractor={(c) => c._id}
+                  renderItem={({ item: c }) => (
+                    <View style={styles.commentRow}>
+                      <Text style={styles.commentUser}>{c.user?.name ?? 'Anonymous'}</Text>
+                      <Text style={styles.commentText}>{c.commentText}</Text>
+                      <Text style={styles.commentDate}>
+                        {new Date(c.createdAt).toLocaleDateString()}
+                      </Text>
 
-      <TextInput
-        value={newCommentText}
-        onChangeText={setNewCommentText}
-        placeholder="Write your review..."
-        placeholderTextColor={'black'}
-        style={styles.commentInput}
-        multiline
-      />
+                      {c.user?._id === userID && (
+                        <View style={styles.actionsRow}>
+                          <Pressable onPress={() => startEditingComment(c)}>
+                            <Text style={styles.editBtn}>🖊️</Text>
+                          </Pressable>
+                          <Pressable onPress={() => deleteComment(c._id)}>
+                            <Text style={styles.deleteBtn}>🗑️</Text>
+                          </Pressable>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                />
+              )}
+              
+              {editingComment && (
+                <View style={styles.editBox}>
+                  <TextInput
+                    value={editedText}
+                    onChangeText={setEditedText}
+                    multiline
+                    style={styles.commentInput}
+                  />
+                  <Pressable style={styles.submitBtn} onPress={submitEdit}>
+                    <Text style={styles.submitBtnText}>Save Changes</Text>
+                  </Pressable>
+                </View>
+              )}
 
-      <Pressable
-        style={[styles.submitBtn, submittingComment && { opacity: 0.7 }]}
-        onPress={submitComment}
-        disabled={submittingComment}
-      >
-        <Text style={styles.submitBtnText}>
-          {submittingComment ? 'Sending...' : 'Submit Review'}
-        </Text>
-      </Pressable>
+              <TextInput
+                value={newCommentText}
+                onChangeText={setNewCommentText}
+                placeholder="Write your review..."
+                placeholderTextColor={'black'}
+                style={styles.commentInput}
+                multiline
+              />
 
-      <Pressable style={styles.closeBtn} onPress={closeCommentsModal}>
-        <Text style={styles.closeBtnText}>Close</Text>
-      </Pressable>
-    </View>
-  </View>
-</Modal>
+              <Pressable
+                style={[styles.submitBtn, submittingComment && { opacity: 0.7 }]}
+                onPress={submitComment}
+                disabled={submittingComment}
+              >
+                <Text style={styles.submitBtnText}>
+                  {submittingComment ? 'Sending...' : 'Submit Review'}
+                </Text>
+              </Pressable>
 
-
+              <Pressable style={styles.closeBtn} onPress={closeCommentsModal}>
+                <Text style={styles.closeBtnText}>Close</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
       </View>
     );
   };
@@ -544,10 +591,6 @@ const reserveStation = async (stationId) => {
       state: station.state,
       source: stationDetails ? 'API' : 'cached'
     });
-
-
-
-
 
     return (
       <Modal
@@ -656,18 +699,12 @@ const reserveStation = async (stationId) => {
                       <Text style={styles.modalDetailText}>
                         📧 Email: {station.owner.email}
                       </Text>
-                      
                     </View>
                   )}
-
-               
                 </ScrollView>
 
                 {/* Fixed Action Buttons at Bottom */}
                 <View style={styles.modalActionButtons}>
-               
-                  
-                 
                 </View>
               </>
             )}
@@ -677,31 +714,27 @@ const reserveStation = async (stationId) => {
     );
   };
 
-
-
-
   return (
     <View style={styles.container}>
-      
       <View style={styles.content}>
-            <TouchableOpacity
-        style={styles.reservationButton}
-        onPress={async () => {
-          try {
-            console.log('Navigating to UserReservations',userID);
-            const userId = await AsyncStorage.getItem('userId');
-            if (userId) {
-              navigation.navigate('UserReservations', { userId });
-            } else {
-              Alert.alert('Error', 'User ID not found');
+        <TouchableOpacity
+          style={styles.reservationButton}
+          onPress={async () => {
+            try {
+              console.log('Navigating to UserReservations',userID);
+              const userId = await AsyncStorage.getItem('userId');
+              if (userId) {
+                navigation.navigate('UserReservations', { userId });
+              } else {
+                Alert.alert('Error', 'User ID not found');
+              }
+            } catch (err) {
+              Alert.alert('Error', 'Failed to retrieve user ID');
             }
-          } catch (err) {
-            Alert.alert('Error', 'Failed to retrieve user ID');
-          }
-        }}
-      >
-        <Text style={styles.reservationButtonText}>Go to My Reservations</Text>
-      </TouchableOpacity>
+          }}
+        >
+          <Text style={styles.reservationButtonText}>Go to My Reservations</Text>
+        </TouchableOpacity>
 
         <Text style={styles.heading}>Available Stations ({stations.length})</Text>
 
@@ -723,7 +756,6 @@ const reserveStation = async (stationId) => {
         ) : stations.length === 0 ? (
           <View style={styles.centerContent}>
             <Text style={styles.noStationsText}>No stations found.</Text>
-            
           </View>
         ) : (
           <FlatList
@@ -837,11 +869,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   buttonContainer: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  gap: 10, // For spacing (React Native >= 0.71)
-  marginTop: 10,
-},
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+    marginTop: 10,
+  },
+
+
+   
   detailsButton: {
     backgroundColor: '#34a4a7',
   paddingTop: 10,

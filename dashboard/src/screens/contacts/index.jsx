@@ -22,7 +22,8 @@ const Contacts = () => {
     const [roles, setRoles] = useState([]);
     const [selectedPartner, setSelectedPartner] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-   
+   const [searchQuery, setSearchQuery] = useState('');
+
   const [formData, setFormData] = useState({
     name: "",
     adress: "",
@@ -263,6 +264,11 @@ const Contacts = () => {
         
 
     ]
+    const filteredPartners = partners.filter((partner) =>
+  partner.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  partner.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  String(partner.phone || "").toLowerCase().includes(searchQuery.toLowerCase()) 
+);
     
     return (  
     <Box m="20px">
@@ -293,11 +299,23 @@ const Contacts = () => {
             color:`${colors.grey[100]} !important`
            }
         }}>
-            <DataGrid 
-            rows={partners}
-            columns={columns} getRowId={(row) => row.id} components={{toolbar:GridToolbar}}>
-                
-            </DataGrid>
+          <Box display="flex" justifyContent="flex-end" mb={2}>
+  <TextField
+    label="Search Partner"
+    variant="outlined"
+    size="small"
+    onChange={(e) => setSearchQuery(e.target.value)}
+    value={searchQuery}
+    sx={{ width: 300 }}
+  />
+</Box>
+           <DataGrid 
+  rows={filteredPartners}
+  columns={columns} 
+  getRowId={(row) => row.id} 
+  components={{ toolbar: GridToolbar }}
+/>
+
         </Box>
         <ToastContainer position="top-right" autoClose={3000} />
     

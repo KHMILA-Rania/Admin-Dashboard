@@ -3,7 +3,7 @@ const GLOBALS = {
     APP_NAME: 'VoltWise',
     DEFAULT_TIMEOUT: 5000, // API timeout in milliseconds
     IP: '192.168.15.98',
-    //IP: '192.168.1.175',
+   // IP: '192.168.17.98',
   };
   
   export default GLOBALS;

@@ -75,13 +75,7 @@ const HandleSubmit = async () => {
       
       // Extract role info as before
       const userType = res.data.data.role?.[0]?.name; // Safe access
-      if (userType) {
-        await AsyncStorage.setItem('userType', userType);
-        console.log('User type stored:', userType);
-      } else {
-        console.warn('User role is missing in response.');
-      }
-
+     
       // Navigate based on account type
       if (accountType === 'partner') {
         navigation.reset({
@@ -100,7 +94,7 @@ const HandleSubmit = async () => {
       Alert.alert('Login failed. Please check your credentials.');
     }
   } catch (err) {
-    console.error('Error during login:', err);
+   // console.error('Error during login:', err);
     
     // More detailed error handling
     if (err.response) {
@@ -110,10 +104,10 @@ const HandleSubmit = async () => {
       Alert.alert('Login Error', errorMessage);
     } else if (err.request) {
       // The request was made but no response was received
-      Alert.alert('Network Error', 'Could not connect to the server. Please check your internet connection.');
+     console.log('Network Error', 'Could not connect to the server. Please check your internet connection.');
     } else {
       // Something happened in setting up the request that triggered an Error
-      Alert.alert('Error', 'An error occurred during login. Please try again.');
+      console.log('Error', 'An error occurred during login. Please try again.');
     }
   }
 };

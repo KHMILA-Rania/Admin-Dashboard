@@ -259,6 +259,7 @@ const RowActions = ({ refreshData, row }) => {
 const Invoices = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+const [searchQuery, setSearchQuery] = useState("");
 
   const [stations, setStations] = useState([]);
   const [openAddModal, setOpenAddModal] = useState(false);
@@ -274,6 +275,18 @@ const Invoices = () => {
     marque: "",
     owner: "",
   });
+const filteredStations = stations.filter((station) =>
+  String(station.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+ 
+  String(station.plugType || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+  String(station.state || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+  String(station.kilowatt || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+  String(station.chargingTime || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+  String(station.capacity || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+  String(station.marque || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+  String(station.ownerName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+  String(station.ownerEmail || "").toLowerCase().includes(searchQuery.toLowerCase())
+);
 
   // Fetch partners
   const fetchPartners = async () => {
@@ -404,9 +417,20 @@ const Invoices = () => {
           "& .MuiCheckbox-root": { color: `${colors.greenAccent[200]} !important` },
         }}
       >
+        <Box mb={2} display="flex" justifyContent="flex-end">
+  <TextField
+    label="Search"
+    variant="outlined"
+    size="small"
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+    sx={{ width: 300 }}
+  />
+</Box>
+
         <DataGrid
           checkboxSelection
-          rows={stations}
+          rows={filteredStations}
           columns={columns}
           components={{ Toolbar: GridToolbar }}
         />

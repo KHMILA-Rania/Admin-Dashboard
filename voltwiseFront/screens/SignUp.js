@@ -16,6 +16,69 @@ function SignUp(){
      const [age, setAge] = useState('');
      const [vehicleType, setVehicleType] = useState('');
     const [plugType, setPlugType] = useState('');
+const [nameError, setNameError] = useState('');
+const [passwordError, setPasswordError] = useState('');
+const [addressError, setAddressError] = useState('');
+const [phoneNumberError, setPhoneNumberError] = useState('');
+const [ageError, setAgeError] = useState('');
+
+
+const validateFields = () => {
+  let valid = true;
+
+  if (!name.trim()) {
+    setNameError("Name is required");
+    valid = false;
+  } else {
+    setNameError("");
+  }
+
+  if (!email.trim()) {
+    setEmailError("Email is required");
+    valid = false;
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    setEmailError("Invalid email format");
+    valid = false;
+  } else {
+    setEmailError("");
+  }
+
+  if (!password.trim()) {
+    setPasswordError("Password is required");
+    valid = false;
+  } else {
+    setPasswordError("");
+  }
+
+  if (!address.trim()) {
+    setAddressError("Address is required");
+    valid = false;
+  } else {
+    setAddressError("");
+  }
+
+  if (!phoneNumber.trim()) {
+    setPhoneNumberError("Phone number is required");
+    valid = false;
+  } else if (!/^\d{8,15}$/.test(phoneNumber)) {
+    setPhoneNumberError("Invalid phone number");
+    valid = false;
+  } else {
+    setPhoneNumberError("");
+  }
+
+  if (!age.trim()) {
+    setAgeError("Age is required");
+    valid = false;
+  } else if (isNaN(age) || parseInt(age) <= 0) {
+    setAgeError("Age must be a positive number");
+    valid = false;
+  } else {
+    setAgeError("");
+  }
+
+  return valid;
+};
 
 
     const validateEmail = () => {
@@ -35,7 +98,7 @@ function SignUp(){
             Alert.alert('Please fill in all fields');
             return;
           }
-    
+           if (!validateFields()) return;
           // Prepare data to send
           const userData = {
             name,
@@ -86,6 +149,7 @@ function SignUp(){
           onChangeText={setName}
         />
         </View>
+        {nameError ? <Text style={{ color: 'red', fontSize: 12 }}>{nameError}</Text> : null}
 
       <Text style={styles.InputLabel}>email</Text>
       <View style={style.action}>
@@ -100,7 +164,7 @@ function SignUp(){
               />
       </View>
 
-
+{emailError ? <Text style={{ color: 'red', fontSize: 12 }}>{emailError}</Text> : null}
         <Text style={styles.InputLabel}>password</Text>
 
         <View style={style.action}>
@@ -113,6 +177,7 @@ function SignUp(){
           secureTextEntry
         />
         </View>
+         {passwordError ? <Text style={{ color: 'red', fontSize: 12 }}>{passwordError}</Text> : null}
         <Text style={styles.InputLabel}>Address</Text>
 
         <View style={style.action}>
@@ -123,7 +188,9 @@ function SignUp(){
           value={address}
           onChangeText={setAddress}
         />
+       
       </View>
+       {addressError ? <Text style={{ color: 'red', fontSize: 12 }}>{addressError}</Text> : null}
         <Text style={styles.InputLabel}>Phone number</Text>
         <View style={style.action}>
         <TextInput
@@ -135,6 +202,7 @@ function SignUp(){
           keyboardType="phone-pad"
         />
       </View>
+       {phoneNumberError ? <Text style={{ color: 'red', fontSize: 12 }}>{phoneNumberError}</Text> : null}
         <Text style={styles.InputLabel}>Age</Text>
         <View style={style.action}>
         <TextInput
@@ -146,7 +214,7 @@ function SignUp(){
           keyboardType="numeric"
         />
         </View>
-
+ {ageError ? <Text style={{ color: 'red', fontSize: 12 }}>{ageError}</Text> : null}
         <Text style={styles.InputLabel}>Vehicle Type (Optional)</Text>
         <View style={style.action}>
         <TextInput

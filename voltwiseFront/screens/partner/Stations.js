@@ -30,6 +30,15 @@ const Stations = () => {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [detailsError, setDetailsError] = useState(null);
   const [deletingStation, setDeletingStation] = useState(false);
+  
+  // Comments modal states
+  const [commentsModalVisible, setCommentsModalVisible] = useState(false);
+  const [selectedStationForComments, setSelectedStationForComments] = useState(null);
+  
+  // Comments state - moved to be specific per station
+  const [stationComments, setStationComments] = useState({}); // Object to store comments by station ID
+  const [loadingComments, setLoadingComments] = useState({});
+  const [commentsError, setCommentsError] = useState({});
 
   const fetchStations = async () => {
     setError(null);
@@ -44,6 +53,11 @@ const Stations = () => {
 
       const res = await axios.get(`http://${GLOBALS.IP}:3000/station/owner/${userId}`);
       setStations(res.data);
+      
+      // Fetch comments for all stations
+      if (res.data && res.data.length > 0) {
+        await fetchCommentsForAllStations(res.data);
+      }
     } catch (err) {
       console.error('Failed to fetch stations:', err.message);
       setError('Failed to load stations');
@@ -54,13 +68,76 @@ const Stations = () => {
     }
   };
 
+  const fetchCommentsForAllStations = async (stationsList) => {
+    const token = await AsyncStorage.getItem('token');
+    
+    for (const station of stationsList) {
+      const stationId = station._id || station.id;
+      
+      setLoadingComments(prev => ({ ...prev, [stationId]: true }));
+      setCommentsError(prev => ({ ...prev, [stationId]: null }));
+      
+      try {
+        console.log(`Fetching comments for station ${stationId}`);
+        const commentsRes = await axios.get(`http://${GLOBALS.IP}:3000/comment/station/${stationId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        setStationComments(prev => ({
+          ...prev,
+          [stationId]: commentsRes.data
+        }));
+        
+        console.log(`Comments fetched for station ${stationId}:`, commentsRes.data);
+      } catch (err) {
+        console.error(`Failed to fetch comments for station ${stationId}:`, err.message);
+        setCommentsError(prev => ({
+          ...prev,
+          [stationId]: 'Failed to load comments'
+        }));
+      } finally {
+        setLoadingComments(prev => ({ ...prev, [stationId]: false }));
+      }
+    }
+  };
+
   const fetchStationDetails = async (stationId) => {
     setLoadingDetails(true);
     setDetailsError(null);
+
     try {
       const res = await axios.get(`http://${GLOBALS.IP}:3000/station/${stationId}/station`);
-      // Extract the station data from the response
       setStationDetails(res.data.station);
+
+      // If comments not already loaded for this station, fetch them
+      if (!stationComments[stationId]) {
+        const token = await AsyncStorage.getItem('token');
+        
+        setLoadingComments(prev => ({ ...prev, [stationId]: true }));
+        
+        try {
+          const commentsRes = await axios.get(`http://${GLOBALS.IP}:3000/comment/station/${stationId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          
+          setStationComments(prev => ({
+            ...prev,
+            [stationId]: commentsRes.data
+          }));
+        } catch (commentsErr) {
+          console.error(`Failed to fetch comments for station ${stationId}:`, commentsErr.message);
+          setCommentsError(prev => ({
+            ...prev,
+            [stationId]: 'Failed to load comments'
+          }));
+        } finally {
+          setLoadingComments(prev => ({ ...prev, [stationId]: false }));
+        }
+      }
     } catch (err) {
       console.error('Failed to fetch station details:', err.message);
       setDetailsError('Failed to load station details');
@@ -69,9 +146,18 @@ const Stations = () => {
     }
   };
 
+  const handleViewAllComments = (station) => {
+    setSelectedStationForComments(station);
+    setCommentsModalVisible(true);
+  };
+
+  const closeCommentsModal = () => {
+    setCommentsModalVisible(false);
+    setSelectedStationForComments(null);
+  };
+
   const handleUpdateStation = (station) => {
     closeModal();
-    // Navigate to update/edit screen with station data
     navigation.navigate('UpdateStation', { station });
   };
 
@@ -80,16 +166,20 @@ const Stations = () => {
     try {
       await axios.delete(`http://${GLOBALS.IP}:3000/station/${stationId}`);
       
-      // Remove the station from the local state
       setStations(prevStations => 
         prevStations.filter(station => 
           (station._id || station.id) !== stationId
         )
       );
       
-      closeModal();
+      // Clean up comments for deleted station
+      setStationComments(prev => {
+        const updated = { ...prev };
+        delete updated[stationId];
+        return updated;
+      });
       
-      // Optional: Show success message
+      closeModal();
       console.log('Station deleted successfully');
       
     } catch (err) {
@@ -124,7 +214,11 @@ const Stations = () => {
   };
 
   const renderStationCard = ({ item }) => {
-    const [lon, lat] = item.location.coordinates; // Note: GeoJSON format is [longitude, latitude]
+    const [lon, lat] = item.location.coordinates;
+    const stationId = item._id || item.id;
+    const comments = stationComments[stationId] || [];
+    const isLoadingComments = loadingComments[stationId];
+    const commentsErr = commentsError[stationId];
     
     return (
       <View style={styles.card}>
@@ -143,6 +237,9 @@ const Stations = () => {
           </Text>
           <Text style={styles.stationInfo}>
             🔋 Capacity: {item.capacity} slots
+          </Text>
+          <Text style={styles.stationInfo}>
+            ★ Rating: {item.averageRating} 
           </Text>
           <Text style={styles.stationInfo}>
             🔌 Plug Type: {item.plugType}
@@ -165,6 +262,47 @@ const Stations = () => {
               : item.supportedVehicles}
           </Text>
           
+          <View style={styles.commentsSection}>
+            <View style={styles.commentsSummary}>
+              <Text style={styles.commentsTitle}>💬 Comments ({comments.length})</Text>
+              {comments.length > 0 && (
+                <TouchableOpacity
+                  style={styles.viewAllCommentsButton}
+                  onPress={() => handleViewAllComments(item)}
+                >
+                  <Text style={styles.viewAllCommentsText}>View All</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {isLoadingComments ? (
+              <ActivityIndicator size="small" color="#007bff" style={styles.commentsLoader} />
+            ) : commentsErr ? (
+              <Text style={styles.commentsError}>{commentsErr}</Text>
+            ) : comments.length === 0 ? (
+              <Text style={styles.noComments}>No comments yet</Text>
+            ) : (
+              <View style={styles.commentsPreview}>
+                {/* Show only the latest 2 comments as preview */}
+                {comments.slice(0, 2).map((comment) => (
+                  <View key={comment._id} style={styles.commentPreviewItem}>
+                    <Text style={styles.commentPreviewUser}>
+                      {comment.user?.name || 'Unknown User'}:
+                    </Text>
+                    <Text style={styles.commentPreviewText} numberOfLines={2}>
+                      {comment.commentText}
+                    </Text>
+                  </View>
+                ))}
+                {comments.length > 2 && (
+                  <Text style={styles.moreCommentsText}>
+                    +{comments.length - 2} more comments
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
+
           <TouchableOpacity
             style={styles.detailsButton}
             onPress={() => handleViewDetails(item)}
@@ -176,19 +314,95 @@ const Stations = () => {
     );
   };
 
+  const renderCommentsModal = () => {
+    if (!selectedStationForComments) return null;
+    
+    const stationId = selectedStationForComments._id || selectedStationForComments.id;
+    const comments = stationComments[stationId] || [];
+    const isLoadingComments = loadingComments[stationId];
+    const commentsErr = commentsError[stationId];
+
+    return (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={commentsModalVisible}
+        onRequestClose={closeCommentsModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.commentsModalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Comments for {selectedStationForComments.name}
+              </Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={closeCommentsModal}
+              >
+                <Text style={styles.closeButtonText}>×</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.commentsModalContent}>
+              {isLoadingComments ? (
+                <View style={styles.modalLoadingContainer}>
+                  <ActivityIndicator size="large" color="#007bff" />
+                  <Text style={styles.modalLoadingText}>Loading comments...</Text>
+                </View>
+              ) : commentsErr ? (
+                <View style={styles.modalErrorContainer}>
+                  <Text style={styles.modalErrorText}>{commentsErr}</Text>
+                </View>
+              ) : comments.length === 0 ? (
+                <View style={styles.noCommentsContainer}>
+                  <Text style={styles.noCommentsText}>No comments yet</Text>
+                  <Text style={styles.noCommentsSubText}>
+                    Be the first to leave a comment about this station!
+                  </Text>
+                </View>
+              ) : (
+                <FlatList
+                  data={comments}
+                  keyExtractor={(item) => item._id}
+                  renderItem={({ item: comment }) => (
+                    <View style={styles.fullCommentItem}>
+                      <View style={styles.commentHeader}>
+                        <Text style={styles.commentUserFull}>
+                          {comment.user?.name || 'Unknown User'}
+                        </Text>
+                        <Text style={styles.commentDateFull}>
+                          {new Date(comment.createdAt).toLocaleDateString()}
+                        </Text>
+                      </View>
+                      <Text style={styles.commentTextFull}>
+                        {comment.commentText}
+                      </Text>
+                      {comment.rating && (
+                        <View style={styles.commentRating}>
+                          <Text style={styles.ratingText}>
+                            {'★'.repeat(comment.rating)}{'☆'.repeat(5 - comment.rating)}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                  showsVerticalScrollIndicator={true}
+                  contentContainerStyle={styles.commentsListContainer}
+                />
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   const renderStationDetailsModal = () => {
-    // Prioritize fresh API data over cached list data
     const station = stationDetails || selectedStation;
     if (!station) return null;
 
     const [lon, lat] = station.location?.coordinates || [0, 0];
     
-    console.log('Modal station data:', {
-      name: station.name,
-      state: station.state,
-      source: stationDetails ? 'API' : 'cached'
-    });
-
     return (
       <Modal
         animationType="slide"
@@ -224,126 +438,27 @@ const Stations = () => {
                 </TouchableOpacity>
               </View>
             ) : (
-              <>
-                <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-                  <View style={styles.modalSection}>
-                    <Text style={styles.modalSectionTitle}>Station Status</Text>
-                    <View style={styles.modalStatusBadge}>
-                      <Text style={styles.modalStatusText}>
-                        {station.state === 'active' ? '🟢 Active' : '🔴 Inactive'}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.modalSection}>
-                    <Text style={styles.modalSectionTitle}>Location</Text>
-                    <Text style={styles.modalDetailText}>
-                      📌 Coordinates: {lat.toFixed(6)}, {lon.toFixed(6)}
-                    </Text>
-                    {station.owner?.adress && (
-                      <Text style={styles.modalDetailText}>
-                        🏠 Address: {station.owner.adress}
-                      </Text>
-                    )}
-                  </View>
-
-                  <View style={styles.modalSection}>
-                    <Text style={styles.modalSectionTitle}>Technical Specifications</Text>
-                    <Text style={styles.modalDetailText}>
-                      🔋 Total Capacity: {station.capacity} charging slots
-                    </Text>
-                    <Text style={styles.modalDetailText}>
-                      🚗 Available Slots: {station.availableSlots || 0}/{station.capacity}
-                    </Text>
-                    <Text style={styles.modalDetailText}>
-                      🔌 Plug Type: {station.plugType}
-                    </Text>
-                    <Text style={styles.modalDetailText}>
-                      ⚡ Power Output: {station.kilowatt}kW
-                    </Text>
-                    <Text style={styles.modalDetailText}>
-                      ⏱️ Charging Time: {station.chargingTime} minutes
-                    </Text>
-                  </View>
-
-                  <View style={styles.modalSection}>
-                    <Text style={styles.modalSectionTitle}>Pricing</Text>
-                    <Text style={styles.modalDetailText}>
-                      💰 Rate: ${station.pricePerKWh}/kWh
-                    </Text>
-                  </View>
-
-                  <View style={styles.modalSection}>
-                    <Text style={styles.modalSectionTitle}>Vehicle Compatibility</Text>
-                    <Text style={styles.modalDetailText}>
-                      🚙 Supported Vehicles: {Array.isArray(station.supportedVehicles) 
-                        ? station.supportedVehicles.join(', ') 
-                        : station.supportedVehicles}
-                    </Text>
-                  </View>
-
-                  <View style={styles.modalSection}>
-                    <Text style={styles.modalSectionTitle}>Reservation Status</Text>
-                    <Text style={styles.modalDetailText}>
-                      {station.isReserved ? '🔒 Reserved' : '🔓 Available for reservation'}
-                    </Text>
-                  </View>
-
-                  {station.owner && (
-                    <View style={styles.modalSection}>
-                      <Text style={styles.modalSectionTitle}>Owner Information</Text>
-                      <Text style={styles.modalDetailText}>
-                        👤 Name: {station.owner.name}
-                      </Text>
-                      <Text style={styles.modalDetailText}>
-                        📧 Email: {station.owner.email}
-                      </Text>
-                      <Text style={styles.modalDetailText}>
-                        📞 Phone: {station.owner.phone}
-                      </Text>
-                    </View>
+              <View style={styles.modalActionButtons}>
+                <TouchableOpacity
+                  style={styles.updateButton}
+                  onPress={() => handleUpdateStation(stationDetails || selectedStation)}
+                  disabled={deletingStation}
+                >
+                  <Text style={styles.updateButtonText}>✏️ Update Station</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.deleteButton, deletingStation && styles.deleteButtonDisabled]}
+                  onPress={() => handleDeleteStation((stationDetails || selectedStation)._id)}
+                  disabled={deletingStation}
+                >
+                  {deletingStation ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.deleteButtonText}>🗑️ Delete Station</Text>
                   )}
-
-                  {station.image && (
-                    <View style={styles.modalSection}>
-                      <Text style={styles.modalSectionTitle}>Station Image</Text>
-                      <Text style={styles.modalDetailText}>
-                        🖼️ Image URL: {station.image}
-                      </Text>
-                    </View>
-                  )}
-
-                  <View style={styles.modalSection}>
-                    <Text style={styles.modalSectionTitle}>Created</Text>
-                    <Text style={styles.modalDetailText}>
-                      📅 {new Date(station.createdAt).toLocaleDateString()} at {new Date(station.createdAt).toLocaleTimeString()}
-                    </Text>
-                  </View>
-                </ScrollView>
-
-                {/* Fixed Action Buttons at Bottom */}
-                <View style={styles.modalActionButtons}>
-                  <TouchableOpacity
-                    style={styles.updateButton}
-                    onPress={() => handleUpdateStation(stationDetails || selectedStation)}
-                    disabled={deletingStation}
-                  >
-                    <Text style={styles.updateButtonText}>✏️ Update Station</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={[styles.deleteButton, deletingStation && styles.deleteButtonDisabled]}
-                    onPress={() => handleDeleteStation((stationDetails || selectedStation)._id)}
-                    disabled={deletingStation}
-                  >
-                    {deletingStation ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Text style={styles.deleteButtonText}>🗑️ Delete Station</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
         </View>
@@ -401,6 +516,7 @@ const Stations = () => {
 
       <BottomNavBar />
       {renderStationDetailsModal()}
+      {renderCommentsModal()}
     </View>
   );
 };
@@ -492,6 +608,95 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginBottom: 12,
   },
+  commentsSection: {
+    marginBottom: 12,
+  },
+  commentsSummary: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  commentsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  viewAllCommentsButton: {
+    backgroundColor: '#007bff',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  viewAllCommentsText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  commentsPreview: {
+    backgroundColor: '#f8f9fa',
+    padding: 8,
+    borderRadius: 6,
+    borderLeftWidth: 3,
+    borderLeftColor: '#007bff',
+  },
+  commentPreviewItem: {
+    marginBottom: 4,
+  },
+  commentPreviewUser: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  commentPreviewText: {
+    fontSize: 11,
+    color: '#555',
+    marginTop: 1,
+  },
+  moreCommentsText: {
+    fontSize: 10,
+    color: '#007bff',
+    fontStyle: 'italic',
+    marginTop: 4,
+  },
+  commentsContainer: {
+    maxHeight: 150,
+    marginBottom: 8,
+  },
+  commentsLoader: {
+    marginVertical: 8,
+  },
+  commentsError: {
+    color: 'red',
+    fontSize: 12,
+    marginVertical: 4,
+  },
+  noComments: {
+    color: '#666',
+    fontSize: 12,
+    fontStyle: 'italic',
+    marginVertical: 4,
+  },
+  commentItem: {
+    marginBottom: 8,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  commentUser: {
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  commentText: {
+    color: '#444',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  commentDate: {
+    fontSize: 10,
+    color: '#888',
+    marginTop: 2,
+  },
   detailsButton: {
     backgroundColor: '#28a745',
     paddingVertical: 10,
@@ -548,7 +753,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 16,
     width: '90%',
-    maxHeight: '100%',
+    maxHeight: '80%',
     shadowColor: '#000',
     shadowOpacity: 0.25,
     shadowOffset: { width: 0, height: 2 },
@@ -582,37 +787,6 @@ const styles = StyleSheet.create({
     color: '#666',
     fontWeight: 'bold',
   },
-  modalContent: {
-    flex: 1,
-    padding: 20,
-  },
-  modalSection: {
-    marginBottom: 20,
-  },
-  modalSectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  modalDetailText: {
-    fontSize: 14,
-    color: '#555',
-    lineHeight: 20,
-    marginBottom: 4,
-  },
-  modalStatusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: '#f8f9fa',
-  },
-  modalStatusText: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
   modalLoadingContainer: {
     padding: 40,
     alignItems: 'center',
@@ -645,7 +819,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  // Action buttons styles
   modalActionButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -686,6 +859,84 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  // Comments Modal Styles
+  commentsModalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    width: '95%',
+    height: '85%',
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  commentsModalContent: {
+    flex: 1,
+    padding: 0,
+  },
+  noCommentsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  noCommentsText: {
+    fontSize: 18,
+    color: '#888',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  noCommentsSubText: {
+    fontSize: 14,
+    color: '#aaa',
+    textAlign: 'center',
+  },
+  commentsListContainer: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  fullCommentItem: {
+    backgroundColor: '#fff',
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  commentUserFull: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  commentDateFull: {
+    fontSize: 12,
+    color: '#888',
+  },
+  commentTextFull: {
+    fontSize: 14,
+    color: '#444',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  commentRating: {
+    marginTop: 4,
+  },
+  ratingText: {
+    fontSize: 16,
+    color: '#ffc107',
   },
 });
 
