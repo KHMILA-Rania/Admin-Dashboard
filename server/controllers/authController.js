@@ -121,27 +121,45 @@ const login= async (req, res) => {
 };
 
 
-const sendPasswordReset= async(req,res)=>{
-    try{
-        const {email}=req.body;
-        const user=await User.findOne({email});
 
-        if(!user){
-            return res.status(404).json({message: 'User not found'});
+ 
+
+
+const sendPasswordReset = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
         }
 
-        const resetToken=jwt.sign(
-            {userId: user._id},
-            process.env.JWT_SECRET,
-            {expiresIn: '30m'}
-        );
+        // Generate a random password
+        const generateRandomPassword = () => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+            let password = '';
+            for (let i = 0; i < 12; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return password;
+            
+        };
 
-        const resetLink=`http://102.25.110.228:3000/auth/reset-password/${resetToken}`;
+        const newPassword = generateRandomPassword();
+        console.log('Generated random password:', newPassword);
+        // Hash the new password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
         
-        
-        const transporter=nodemailer.createTransport({
-            service:'gmail',
-         
+        // Update user's password in database
+        await User.findByIdAndUpdate(user._id, { 
+            password: hashedPassword,
+            // Optional: Add a flag to force password change on next login
+            mustChangePassword: true 
+        });
+
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
             port: 587,
             secure: false,
             auth: {
@@ -149,104 +167,121 @@ const sendPasswordReset= async(req,res)=>{
                 pass: process.env.SMTP_PASSWORD
             },
             tls: {
-                rejectUnauthorized: false,  // Disable rejecting unauthorized SSL certificates (optional)
-              },
+                rejectUnauthorized: false,
+            },
         });
-        
-        const mailOptions={
-            from : {
-                name:"VoltWise Solutions",
-                adress: process.env.SMTP_USER},
+
+        const mailOptions = {
+            from: {
+                name: "VoltWise Solutions",
+                address: process.env.SMTP_USER // Fixed typo: "adress" -> "address"
+            },
             to: email,
-            subject: 'Password Reset',
+            subject: 'New Password - VoltWise Solutions',
             html: `
-                 <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Password Reset</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    background-color: #f4f7fc;
-                    margin: 0;
-                    padding: 0;
-                }
-                .container {
-                    max-width: 600px;
-                    margin: 50px auto;
-                    background-color: #ffffff;
-                    border-radius: 8px;
-                    padding: 30px;
-                    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                }
-                .header {
-                    text-align: center;
-                    color: #2a3d66;
-                }
-                .header h1 {
-                    font-size: 28px;
-                    margin-bottom: 10px;
-                }
-                .content {
-                    font-size: 16px;
-                    line-height: 1.5;
-                    color: #333333;
-                    margin-top: 20px;
-                }
-                .btn {
-                    display: inline-block;
-                    padding: 15px 30px;
-                    margin-top: 20px;
-                    background-color:rgb(149, 176, 205);
-                    color: #000000;
-                    font-size: 16px;
-                    text-decoration: none;
-                    border-radius: 5px;
-                    text-align: center;
-                }
-                .btn:hover {
-                    background-color: #0056b3;
-                }
-                .footer {
-                    text-align: center;
-                    margin-top: 30px;
-                    font-size: 12px;
-                    color: #777777;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>Password Reset Request</h1>
-                </div>
-                <div class="content">
-                    <p>Hello,</p>
-                    <p>We received a request to reset your password. Click the button below to reset your password:</p>
-                    <a href="${resetLink}" class="btn">Reset Password</a>
-                    <p>If you did not request a password reset, please ignore this email.</p>
-                </div>
-                <div class="footer">
-                    <p>&copy; 2025 Voltwise Solutions. All rights reserved.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-                `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>New Password</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            background-color: #f4f7fc;
+                            margin: 0;
+                            padding: 0;
+                        }
+                        .container {
+                            max-width: 600px;
+                            margin: 50px auto;
+                            background-color: #ffffff;
+                            border-radius: 8px;
+                            padding: 30px;
+                            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                        }
+                        .header {
+                            text-align: center;
+                            color: #2a3d66;
+                        }
+                        .header h1 {
+                            font-size: 28px;
+                            margin-bottom: 10px;
+                        }
+                        .content {
+                            font-size: 16px;
+                            line-height: 1.5;
+                            color: #333333;
+                            margin-top: 20px;
+                        }
+                        .password-box {
+                            background-color: #f8f9fa;
+                            border: 2px solid rgb(149, 176, 205);
+                            border-radius: 5px;
+                            padding: 15px;
+                            margin: 20px 0;
+                            text-align: center;
+                            font-family: 'Courier New', monospace;
+                            font-size: 18px;
+                            font-weight: bold;
+                            color: #2a3d66;
+                        }
+                        .warning {
+                            background-color: #fff3cd;
+                            border: 1px solid #ffeaa7;
+                            border-radius: 5px;
+                            padding: 15px;
+                            margin: 20px 0;
+                            color: #856404;
+                        }
+                        .footer {
+                            text-align: center;
+                            margin-top: 30px;
+                            font-size: 12px;
+                            color: #777777;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>New Password Generated</h1>
+                        </div>
+                        <div class="content">
+                            <p>Hello,</p>
+                            <p>We have generated a new password for your account. Please use the password below to log in:</p>
+                            
+                            <div class="password-box">
+                                ${newPassword}
+                            </div>
+                            
+                            <div class="warning">
+                                <strong>Important:</strong> For security reasons, please change this password immediately after logging in. Go to your profile settings to update your password.
+                            </div>
+                            
+                            <p>If you did not request a password reset, please contact our support team immediately.</p>
+                        </div>
+                        <div class="footer">
+                            <p>&copy; 2025 Voltwise Solutions. All rights reserved.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `
         };
-        console.log(resetLink)
-       
+
+        console.log('New password generated for user:', email);
+
         await transporter.sendMail(mailOptions);
-        return res.status(200).json({message: 'Reset password email sent'});
-      
+        return res.status(200).json({ 
+            message: 'New password has been sent to your email address' 
+        });
+
+    } catch (err) {
+        console.error('Error sending new password email:', err);
+        return res.status(500).json({ message: 'Something went wrong' });
     }
-    catch(err){
-        console.error('Error sending password reset email:', err);
-        return res.status(500).json({message: 'Something went wrong'});
-    }
-}
+};
 
 const resetPassword = async (req, res) => {
     console.log('Reset password route reached');

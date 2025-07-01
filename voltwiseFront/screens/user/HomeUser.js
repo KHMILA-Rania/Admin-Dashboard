@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PermissionsAndroid, Platform } from 'react-native';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Alert, Modal, ScrollView } from 'react-native';
+import { PermissionsAndroid, Platform, View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Alert, Modal, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker, PROVIDER_GOOGLE, Callout } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
@@ -55,14 +54,14 @@ const HomeUser = ({ navigation }) => {
   });
 
   // Request location permissions for Android
-  const requestLocationPermissionOld= async () => {
+  const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
       try {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           {
             title: 'Location Permission',
-            message: 'This app needs access to your location to show nearby charging stations.',
+            message: 'This app needs access to your location',
             buttonNeutral: 'Ask Me Later',
             buttonNegative: 'Cancel',
             buttonPositive: 'OK',
@@ -70,233 +69,74 @@ const HomeUser = ({ navigation }) => {
         );
         return granted === PermissionsAndroid.RESULTS.GRANTED;
       } catch (err) {
-        console.warn('Permission request error:', err);
+        console.warn(err);
         return false;
       }
     }
-    return true; // iOS permissions are handled differently
+    return true; // iOS handles permissions differently
   };
-  //new
 
-
-// Add this function
-const requestLocationPermission = async () => {
-  if (Platform.OS === 'android') {
-    try {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        {
-          title: 'Location Permission',
-          message: 'This app needs access to your location',
-          buttonNeutral: 'Ask Me Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK',
-        }
-      );
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
-    } catch (err) {
-      console.warn(err);
-      return false;
-    }
-  }
-  return true; // iOS handles permissions differently
-};
-
-//old version
-  const getUserLocation= () => {
-    console.log('Attempting to get user location...');
+  const getUserLocation = async () => {
     setLoadingLocation(true);
 
-    // First, check if location services are enabled
-    Geolocation.getCurrentPosition(
-      (position) => {
-        console.log('Location found:', position);
-        const { latitude, longitude } = position.coords;
-        
-        // Validate coordinates
-        if (latitude && longitude && 
-            latitude >= -90 && latitude <= 90 && 
-            longitude >= -180 && longitude <= 180) {
-          
+    try {
+      const hasPermission = await requestLocationPermission();
+      if (!hasPermission) {
+        throw new Error('Location permission denied');
+      }
+
+      Geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
           setRegion({
             latitude,
             longitude,
             latitudeDelta: 0.01,
             longitudeDelta: 0.01,
           });
-          console.log('Location updated successfully:', { latitude, longitude });
-        } else {
-          console.error('Invalid coordinates received:', { latitude, longitude });
-          throw new Error('Invalid coordinates');
-        }
-        
-        setLoadingLocation(false);
-      },
-      (error) => {
-        console.log('Detailed location error:', error);
-        setLoadingLocation(false);
-        
-        let errorMessage = 'Unable to get your current location. ';
-        
-        switch (error.code) {
-          case 1: // PERMISSION_DENIED
-            errorMessage += 'Location permission was denied. Please enable location services in your device settings.';
-            break;
-          case 2: // POSITION_UNAVAILABLE
-            errorMessage += 'Location information is unavailable. Please check if GPS is enabled.';
-            break;
-          case 3: // TIMEOUT
-            errorMessage += 'Location request timed out. Please try again.';
-            break;
-          default:
-            errorMessage += `Error code: ${error.code}. Please try again or check your location settings.`;
-        }
-        
-        Alert.alert(
-          'Location Error',
-          errorMessage + ' Using default location instead.',
-          [
-            { 
-              text: 'Retry', 
-              onPress: () => getUserLocation() 
-            },
-            { 
-              text: 'OK', 
-              onPress: () => console.log('Using default location') 
-            }
-          ]
-        );
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 20000, // Increased timeout
-        maximumAge: 5000, // Reduced maximum age for fresher location
-        showLocationDialog: true, // Android only - prompts user to enable location
-        forceRequestLocation: true, // Android only - force location request
-      }
-    );
-  };
-
-  //new
-  const getUserLocationnn = async () => {
-  setLoadingLocation(true);
-
-  try {
-    // Request permission first
-    const hasPermission = await requestLocationPermission();
-    if (!hasPermission) {
-      throw new Error('Location permission denied');
-    }
-
-      const servicesEnabled = await checkLocationServices();
-    if (!servicesEnabled) {
-      throw new Error('Location services disabled');
-    }
-
-
-
-     // 3. Get current position with retry logic
-    let retries = 0;
-    const maxRetries = 2;
-    //new
-    const attemptLocationFetch = async () => {
-      return new Promise((resolve, reject) => {
-        Geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            console.log('Location successfully fetched:', latitude, longitude);
-            resolve({ latitude, longitude });
-          },
-          (error) => {
-            if (retries < maxRetries) {
-              retries++;
-              console.log(`Retry attempt ${retries}...`);
-              setTimeout(() => attemptLocationFetch().then(resolve).catch(reject), 1000);
-            } else {
-              reject(error);
-            }
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000, // 10 seconds
-            maximumAge: 5000 // Accept cached location no older than 5s
+          setLoadingLocation(false);
+          console.log('Location fetched:', latitude, longitude);
+        },
+        (error) => {
+          console.log('Location error:', error);
+          setLoadingLocation(false);
+          let errorMessage = 'Unable to get your current location';
+          switch (error.code) {
+            case 1:
+              errorMessage = 'Location permission denied. Please enable in settings.';
+              break;
+            case 2:
+              errorMessage = 'Location unavailable. Check your network/GPS.';
+              break;
+            case 3:
+              errorMessage = 'Location request timed out. Try again in an open area.';
+              break;
           }
-        );
-      });
-    };
-
-    Geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setRegion({
-          latitude,
-          longitude,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        });
-        setLoadingLocation(false);
-        
-        // Log success
-        console.log('Location fetched:', latitude, longitude);
-      },
-      (error) => {
-        console.log('Location error:', error);
-        setLoadingLocation(false);
-        Alert.alert(
-          'Location Error',
-          `Unable to get your current location: ${error.message}. Using default location instead.`
-        );
-      },
-      { 
-        enableHighAccuracy: true, 
-        timeout: 20000, // Increased timeout
-        maximumAge: 10000 
-      }
-    );
-  } catch (error) {
-    console.log('Permission error:', error);
-    setLoadingLocation(false);
-    Alert.alert(
-      'Permission Error',
-      'Location permission is required to use this feature'
-    );
-  }
-};
-
-
-
-const handleLocationError = (error) => {
-  let errorMessage = 'Could not get your location';
-  
-  switch(error.code) {
-    case 1: // PERMISSION_DENIED
-      errorMessage = 'Location permission denied. Please enable in settings.';
-      break;
-    case 2: // POSITION_UNAVAILABLE
-      errorMessage = 'Location unavailable. Check your network/GPS.';
-      break;
-    case 3: // TIMEOUT
-      errorMessage = 'Location request timed out. Try again in an open area.';
-      break;
-  }
-
-  Alert.alert(
-    'Location Error',
-    errorMessage,
-    [
-      {
-        text: 'Open Settings',
-        onPress: () => Linking.openSettings()
-      },
-      { 
-        text: 'Try Again',
-        onPress: getUserLocation
-      },
-      { text: 'Cancel' }
-    ]
-  );
-};
-
+          Alert.alert(
+            'Location Error',
+            `${errorMessage}. Using default location instead.`,
+            [
+              { text: 'Open Settings', onPress: () => Linking.openSettings() },
+              { text: 'Try Again', onPress: getUserLocation },
+              { text: 'Cancel' }
+            ]
+          );
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 20000,
+          maximumAge: 10000
+        }
+      );
+    } catch (error) {
+      console.log('Permission error:', error);
+      setLoadingLocation(false);
+      Alert.alert(
+        'Permission Error',
+        'Location permission is required to use this feature'
+      );
+    }
+  };
 
   useEffect(() => {
     const initialize = async () => {
@@ -307,28 +147,20 @@ const handleLocationError = (error) => {
         setUserID(storedUserId);
         console.log('User ID:', storedUserId);
 
-        //if (storedToken) {
-         // const userData = JSON.parse(storedToken);
-          //setUserName(userData?.name || 'User');
-       // }
         if (storedUserType) {
           setUserType(storedUserType);
         }
 
-        // Configure Geolocation
         Geolocation.setRNConfiguration({
           skipPermissionRequests: false,
           authorizationLevel: 'whenInUse',
-          locationProvider: 'auto', // Use best available provider
-        //  enableBackgroundLocationUpdates: false,
+          locationProvider: 'auto',
         });
 
-
         setTimeout(() => {
-        getUserLocation();
-      }, 1000);
-      
-        // Request permissions and get location
+          getUserLocation();
+        }, 1000);
+
         const hasPermission = await requestLocationPermission();
         if (hasPermission) {
           getUserLocation();
@@ -346,15 +178,12 @@ const handleLocationError = (error) => {
         fetchStations();
       } catch (error) {
         console.error('Error loading user data:', error);
-
       }
     };
 
     initialize();
   }, []);
 
-
-  // Add a manual location refresh function
   const refreshLocation = () => {
     Alert.alert(
       'Refresh Location',
@@ -372,14 +201,14 @@ const handleLocationError = (error) => {
   };
 
   const fetchStations = async () => {
-      const storedToken = await AsyncStorage.getItem('token');
+    const storedToken = await AsyncStorage.getItem('token');
     try {
-
       setLoadingStations(true);
-      const response = await axios.get(`http://${GLOBALS.IP}:3000/station` ,{
-  headers: {
-    Authorization: `Bearer ${storedToken}`
-  }});
+      const response = await axios.get(`http://${GLOBALS.IP}:3000/station`, {
+        headers: {
+          Authorization: `Bearer ${storedToken}`
+        }
+      });
       setStations(response.data);
     } catch (error) {
       console.error('Error fetching stations:', error);
@@ -427,52 +256,65 @@ const handleLocationError = (error) => {
     );
   };
 
-  const reserveStation = async (stationId) => {
-    try {
-      const response = await axios.post(
-        `http://${GLOBALS.IP}:3000/reservation/${stationId}/reserve`,
-        { userId: userID }
-      );
-
-      Alert.alert('Reservation Successful', response.data.message);
-      setActiveReservation(response.data.reservation);
-      console.log('Active reservation state:', response.data.reservation);
-      setReservationEndTime(new Date(response.data.reservation.endTime));
-      fetchStations();
-    } catch (error) {
-      console.error('Error reserving station:', error);
-      if (error.response) {
-        Alert.alert('Reservation Failed', error.response.data.message || 'Failed to reserve station');
-      } else {
-        Alert.alert('Error', 'Could not connect to server');
+const reserveStation = async (stationId) => {
+  try {
+    const storedToken = await AsyncStorage.getItem('token');
+    const response = await axios.post(
+      `http://${GLOBALS.IP}:3000/reservation/${stationId}/reserve`,
+      { userId: userID },
+      {
+        headers: {
+          Authorization: `Bearer ${storedToken}`,
+        },
       }
-    }
-  };
+    );
 
-  useEffect(() => {
-    let timer;
+    console.log('Reservation response:', response.data);
+    Alert.alert('Reservation Successful', response.data.message);
+    const reservation = response.data.reservation;
+    const endTime = new Date(response.data.reservation.endTime);
 
-    if (reservationEndTime) {
-      timer = setInterval(() => {
-        const now = new Date();
-        const diff = reservationEndTime - now;
-
-        if (diff <= 0) {
-          clearInterval(timer);
-          setTimeLeft('Expired');
-          setActiveReservation(null);
-          setReservationEndTime(null);
-          fetchStations();
-        } else {
-          const minutes = Math.floor(diff / 60000);
-          const seconds = Math.floor((diff % 60000) / 1000);
-          setTimeLeft(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
-        }
-      }, 1000);
+    if (isNaN(endTime)) {
+      console.error('Invalid reservation end time:', response.data.reservation.endTime);
+      Alert.alert('Error', 'Invalid reservation time received from server');
+      return;
     }
 
-    return () => clearInterval(timer);
-  }, [reservationEndTime]);
+    setActiveReservation(reservation);
+    setReservationEndTime(endTime);
+    console.log('Reservation set:', { reservation, endTime });
+
+    // Initialize timeLeft immediately
+    const now = new Date();
+    const diff = endTime - now;
+    if (diff > 0) {
+      const minutes = Math.floor(diff / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+    } else {
+      setTimeLeft('Expired');
+      setActiveReservation(null);
+      setReservationEndTime(null);
+      await AsyncStorage.removeItem('reservationEndTime');
+      await AsyncStorage.removeItem('activeReservation');
+    }
+
+    // Persist reservation data
+    await AsyncStorage.setItem('reservationEndTime', endTime.toISOString());
+    await AsyncStorage.setItem('activeReservation', JSON.stringify(reservation));
+
+    fetchStations();
+  } catch (error) {
+    console.error('Error reserving station:', error);
+    if (error.response) {
+      console.error('Reservation error details:', error.response.data);
+      Alert.alert('Reservation Failed', error.response.data.message || 'Failed to reserve station');
+    } else {
+      Alert.alert('Error', 'Could not connect to server');
+    }
+  }
+};
+
 
   const findNearbyStations = async (maxDistance = selectedDistance) => {
     try {
@@ -532,7 +374,6 @@ const handleLocationError = (error) => {
       console.log("User plug type:", response.data.user.plugType);
       return response.data.user.plugType;
     } catch (error) {
-      
       return null;
     }
   };
@@ -552,7 +393,13 @@ const handleLocationError = (error) => {
 
       Alert.alert('Reservation Extended', response.data.message);
       setActiveReservation(response.data.reservation);
-      setReservationEndTime(new Date(response.data.reservation.endTime));
+      const endTime = new Date(response.data.reservation.endTime);
+      setReservationEndTime(endTime);
+
+      // Persist updated reservation data
+      await AsyncStorage.setItem('reservationEndTime', endTime.toISOString());
+      await AsyncStorage.setItem('activeReservation', JSON.stringify(response.data.reservation));
+
       fetchStations();
     } catch (error) {
       console.error('Error extending reservation:', error);
@@ -560,45 +407,181 @@ const handleLocationError = (error) => {
     }
   };
 
-  const freeStation = async (reservationId) => {
-    try {
-      console.log('Calling freeStation with reservationId:', reservationId);
+const freeStation = async (reservationId) => {
+  try {
+    console.log('Attempting to free station with reservationId:', reservationId, 'userId:', userID);
+    const storedToken = await AsyncStorage.getItem('token');
+    const response = await axios.patch(
+      `http://${GLOBALS.IP}:3000/reservation/${reservationId}/cancel`,
+      { userId: userID },
+      {
+        headers: {
+          Authorization: `Bearer ${storedToken}`,
+        },
+      }
+    );
 
-      const response = await axios.patch(
-        `http://${GLOBALS.IP}:3000/reservation/${reservationId}/cancel`,
-        { userId: userID }
-      );
+    console.log('Free station response:', response.data);
+    Alert.alert('Station Freed', response.data.message);
 
-      console.log('Free station response:', response.data);
-      Alert.alert('Station Freed', response.data.message);
+    // Reset all timer-related states
+    setActiveReservation(null);
+    setReservationEndTime(null);
+    setTimeLeft('');
+    setSelectedStation(null);
+    setModalVisible(false);
 
-      setActiveReservation(null);
-      setReservationEndTime(null);
-      setSelectedStation(null);
-      setModalVisible(false);
+    // Clear persisted data
+    await AsyncStorage.removeItem('reservationEndTime');
+    await AsyncStorage.removeItem('activeReservation');
 
-      await fetchStations();
-    } catch (error) {
-      console.error('Error freeing station:', error);
+    await fetchStations();
+  } catch (error) {
+    console.error('Error freeing station:', error);
+    console.error('Error details:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.response?.data?.message,
+    });
 
-      let errorMessage = 'Failed to free station';
+    let errorMessage = 'Failed to free station';
 
-      if (error.response) {
-        errorMessage = error.response.data.message || errorMessage;
+    if (error.response) {
+      errorMessage = error.response.data.message || errorMessage;
 
-        if (
-          error.response.status === 400 &&
-          error.response.data.message.includes('already ended')
-        ) {
+      if (error.response.status === 400) {
+        if (errorMessage.includes('already ended') || errorMessage.includes('already canceled')) {
+          console.log('Reservation already ended or canceled, clearing state');
+          // Reset all timer-related states
           setActiveReservation(null);
           setReservationEndTime(null);
+          setTimeLeft('');
+          setSelectedStation(null);
+          setModalVisible(false);
+          await AsyncStorage.removeItem('reservationEndTime');
+          await AsyncStorage.removeItem('activeReservation');
           await fetchStations();
+        } else {
+          console.error('Unhandled 400 error:', errorMessage);
+          Alert.alert('Error', errorMessage);
         }
+      } else {
+        Alert.alert('Error', errorMessage);
       }
+    } else {
+      Alert.alert('Error', 'Could not connect to server');
+    }
+  }
+};
 
-      Alert.alert('Error', errorMessage);
+useEffect(() => {
+  let timer;
+
+  const initializeTimer = async () => {
+    try {
+      const storedEndTime = await AsyncStorage.getItem('reservationEndTime');
+      const storedReservation = await AsyncStorage.getItem('activeReservation');
+
+      console.log('Stored data:', { storedEndTime, storedReservation });
+
+      if (storedEndTime && storedReservation) {
+        const endTime = new Date(storedEndTime);
+        const reservation = JSON.parse(storedReservation);
+
+        if (isNaN(endTime)) {
+          console.error('Invalid stored end time:', storedEndTime);
+          await AsyncStorage.removeItem('reservationEndTime');
+          await AsyncStorage.removeItem('activeReservation');
+          setTimeLeft('');
+          return;
+        }
+
+        // Check if the reservation belongs to the current user
+        if (reservation.userId !== userID) {
+          console.log('Stored reservation does not belong to current user, clearing data');
+          await AsyncStorage.removeItem('reservationEndTime');
+          await AsyncStorage.removeItem('activeReservation');
+          setTimeLeft('');
+          setActiveReservation(null);
+          setReservationEndTime(null);
+          return;
+        }
+
+        const now = new Date();
+        if (endTime > now) {
+          setReservationEndTime(endTime);
+          setActiveReservation(reservation);
+          const diff = endTime - now;
+          const minutes = Math.floor(diff / 60000);
+          const seconds = Math.floor((diff % 60000) / 1000);
+          const newTimeLeft = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+          setTimeLeft(newTimeLeft);
+          console.log('Timer restored:', { endTime, reservation, timeLeft: newTimeLeft });
+        } else {
+          console.log('Stored reservation expired');
+          await AsyncStorage.removeItem('reservationEndTime');
+          await AsyncStorage.removeItem('activeReservation');
+          setTimeLeft('');
+          setActiveReservation(null);
+          setReservationEndTime(null);
+          fetchStations();
+        }
+      } else {
+        console.log('No stored reservation data found');
+        setTimeLeft('');
+      }
+    } catch (error) {
+      console.error('Error initializing timer:', error);
+      setTimeLeft('');
     }
   };
+
+  initializeTimer();
+
+  // Only start timer if reservationEndTime exists AND activeReservation belongs to current user
+  if (reservationEndTime && activeReservation && activeReservation.userId === userID) {
+    console.log('Starting timer with endTime:', reservationEndTime.toISOString(), 'for user:', userID);
+    timer = setInterval(() => {
+      const now = new Date();
+      const diff = reservationEndTime - now;
+
+      if (diff <= 0) {
+        console.log('Timer expired');
+        clearInterval(timer);
+        setTimeLeft('');
+        setActiveReservation(null);
+        setReservationEndTime(null);
+        AsyncStorage.removeItem('reservationEndTime');
+        AsyncStorage.removeItem('activeReservation');
+        fetchStations();
+      } else {
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        const newTimeLeft = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        setTimeLeft(newTimeLeft);
+        console.log('Timer tick:', newTimeLeft);
+      }
+    }, 1000);
+  } else {
+    console.log('Timer not started - either no reservationEndTime or reservation does not belong to current user');
+    if (reservationEndTime && activeReservation && activeReservation.userId !== userID) {
+      console.log('Clearing timer data - reservation belongs to different user');
+      setTimeLeft('');
+      setActiveReservation(null);
+      setReservationEndTime(null);
+      AsyncStorage.removeItem('reservationEndTime');
+      AsyncStorage.removeItem('activeReservation');
+    } else {
+      setTimeLeft(''); // Ensure timeLeft is cleared if no timer
+    }
+  }
+
+  return () => {
+    console.log('Clearing timer');
+    clearInterval(timer);
+  };
+}, [reservationEndTime, activeReservation, userID]); // Added activeReservation and userID to dependencies
+
 
   const handleStationPress = (station) => {
     setSelectedStation(station);
@@ -707,7 +690,6 @@ const handleLocationError = (error) => {
             </Text>
           </TouchableOpacity>
 
-          {/* Add location refresh button */}
           <TouchableOpacity 
             style={[styles.actionButton, { backgroundColor: '#33aab6' }]} 
             onPress={refreshLocation}
@@ -783,8 +765,6 @@ const handleLocationError = (error) => {
 
                 {activeReservation && activeReservation.stationId === selectedStation._id && activeReservation.status === 'active' ? (
                   <>
-                    
-
                     <TouchableOpacity
                       style={[styles.modalButton, { backgroundColor: '#FF5C5C' }]}
                       onPress={() => freeStation(activeReservation._id)}
@@ -831,7 +811,7 @@ const handleLocationError = (error) => {
   );
 };
 
-// Keep your existing styles
+// Styles remain unchanged
 const styles = StyleSheet.create({
   timerBanner: {
     backgroundColor: '#39B2DB',
@@ -918,7 +898,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 10,
     borderRadius: 10,
-    flex: 0.32, // Adjusted to fit 3 buttons
+    flex: 0.32,
     alignItems: 'center',
   },
   highlightActiveButton: {
@@ -926,12 +906,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 15,
     borderRadius: 30,
-    flex: 0.32, // Adjusted to fit 3 buttons
+    flex: 0.32,
     alignItems: 'center',
   },
   buttonText: {
     color: 'white',
-    fontSize: 14, // Slightly smaller to fit 3 buttons
+    fontSize: 14,
     fontWeight: 'bold',
   },
   modalContainer: {

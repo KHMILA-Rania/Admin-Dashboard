@@ -19,22 +19,30 @@ import axios from "axios";
 const Faq = () => {
   const [complaints, setComplaints] = useState([]);
   const [partners, setPartners] = useState([]); // Store the list of partners
-  const [selectedPartner, setSelectedPartner] = useState(""); // Store selected partner ID
+  // Changed from single selectedPartner string to an object to track per complaint
+  const [selectedPartners, setSelectedPartners] = useState({});
   const [loadingPartners, setLoadingPartners] = useState(true); // Loading state for partners
 
-  // Function to return background color based on complaint status
-  const getBackgroundColor = (status) => {
-    switch (status) {
-      case "pending":
-        return "#516669"; // Yellow (Pending)
-      case "resolved":
-        return "#4CAF50"; // Green (Resolved)
-      case "in-progress":
-        return "#2196F3"; // Blue (In Progress)
-      default:
-        return "#BDBDBD"; // Grey (Default)
-    }
-  };
+const getBackgroundColor = (status, assignedPartnerId) => {
+  console.log("Checking status:", status, "Assigned partner:", assignedPartnerId);
+
+  if (status === "pending" && !assignedPartnerId) {
+    return "#FF9800"; // Orange for unassigned
+  }
+
+  switch (status) {
+    case "pending":
+      return "#516669";
+    case "resolved":
+      return "#4CAF50";
+    case "in-progress":
+      return "#2196F3";
+    default:
+      return "#BDBDBD";
+  }
+};
+
+
 
   useEffect(() => {
     // Fetch complaints from the backend
@@ -51,18 +59,17 @@ const Faq = () => {
     const fetchPartners = async () => {
       try {
         const response = await axios.get("http://localhost:3000/partner");
-        // Access the partners array from the response object
         if (Array.isArray(response.data.partners)) {
           setPartners(response.data.partners);
         } else {
           console.error("Partners data is not an array", response.data);
-          setPartners([]); // Set empty array if data is not in the correct format
+          setPartners([]);
         }
       } catch (error) {
         console.error("Error fetching partners:", error);
-        setPartners([]); // Set empty array in case of error
+        setPartners([]);
       } finally {
-        setLoadingPartners(false); // Set loading to false after data is fetched
+        setLoadingPartners(false);
       }
     };
 
@@ -72,27 +79,63 @@ const Faq = () => {
 
   // Function to handle complaint transfer
   const handleTransfer = async (complaintId) => {
+    const partnerId = selectedPartners[complaintId]; // get selected partner for this complaint
+
+    if (!partnerId) {
+      alert("Please select a partner to transfer the complaint.");
+      return;
+    }
+
     try {
-      if (!selectedPartner) {
-        alert("Please select a partner to transfer the complaint.");
-        return;
-      }
+      const token = localStorage.getItem("token");
       const response = await axios.patch(
         `http://localhost:3000/complaint/${complaintId}/transfer`,
-        { partnerId: selectedPartner }
+        { partnerId },
+        {
+          headers: {
+            authorization: `Bearer ${token}`
+          }
+        }
       );
       console.log("Complaint transferred successfully:", response.data);
-      setSelectedPartner("");
+
+      // Clear selected partner only for this complaint
+      setSelectedPartners(prev => {
+        const updated = { ...prev };
+        delete updated[complaintId];
+        return updated;
+      });
+
       setComplaints((prevComplaints) =>
         prevComplaints.map((complaint) =>
           complaint._id === complaintId
-            ? { ...complaint, assignedPartnerId: selectedPartner }
+            ? { ...complaint, assignedPartnerId: partnerId }
             : complaint
         )
       );
     } catch (error) {
       console.error("Error transferring complaint:", error);
     }
+  };
+
+  const StationName = ({ stationId }) => {
+    const [stationName, setStationName] = useState(null);
+
+    useEffect(() => {
+      const fetchStation = async () => {
+        try {
+          const response = await axios.get(`http://localhost:3000/station/${stationId}/station`);
+          console.log("Station response:", response.data);
+          setStationName(response.data.station.owner.name);
+        } catch (error) {
+          console.error('Error fetching station name:', error);
+        }
+      };
+
+      fetchStation();
+    }, [stationId]);
+
+    return <p>{stationName || 'Station owner not provided '}</p>;
   };
 
   return (
@@ -105,22 +148,22 @@ const Faq = () => {
           const user = complaint.userId;
 
           return (
-            <Accordion
-              key={complaint._id}
-              
-              sx={{
-                backgroundColor: getBackgroundColor(complaint.status),
-                marginBottom: "10px",
-                boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
-              }}
-            >
+           <Accordion
+  key={complaint._id}
+  sx={{
+    backgroundColor: getBackgroundColor(complaint.status, complaint.assignedPartnerId), // ✅ pass assignedPartnerId
+    marginBottom: "10px",
+    boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+  }}
+>
+
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Box>
                   <Typography variant="h5" color="#a7c2b6">
                     {complaint.subject}
                   </Typography>
                   <Typography variant="subtitle2" color="textSecondary">
-                    Submitted by: {user ? `${user.name} (${user.email})` : "Unknown User"} — Status: {complaint.status}
+                    Submitted by: {user ? `${user.name} (${user.email})` : "Unknown User"} — Status: {complaint.status} -station owner: <StationName stationId={complaint.stationId} />
                   </Typography>
                 </Box>
               </AccordionSummary>
@@ -132,13 +175,18 @@ const Faq = () => {
 
                 {/* Dropdown for selecting partner */}
                 <FormControl fullWidth margin="normal">
-                  <InputLabel id="partner-select-label">Assign Partner</InputLabel>
+                  <InputLabel id={`partner-select-label-${complaint._id}`}>Assign Partner</InputLabel>
                   <Select
-                    labelId="partner-select-label"
-                    value={selectedPartner}
-                    onChange={(e) => setSelectedPartner(e.target.value)}
+                    labelId={`partner-select-label-${complaint._id}`}
+                    value={selectedPartners[complaint._id] || ""}
+                    onChange={(e) =>
+                      setSelectedPartners((prev) => ({
+                        ...prev,
+                        [complaint._id]: e.target.value,
+                      }))
+                    }
                     label="Assign Partner"
-                    disabled={loadingPartners} // Disable the dropdown while loading partners
+                    disabled={loadingPartners}
                   >
                     {loadingPartners ? (
                       <MenuItem disabled>
@@ -161,7 +209,7 @@ const Faq = () => {
                   variant="contained"
                   color="primary"
                   onClick={() => handleTransfer(complaint._id)}
-                  disabled={!selectedPartner} // Disable button if no partner is selected
+                  disabled={!selectedPartners[complaint._id]} // Disable if no partner selected for this complaint
                   sx={{ marginTop: "10px" }}
                 >
                   Transfer to Partner

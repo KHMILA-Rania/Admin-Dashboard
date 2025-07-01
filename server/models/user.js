@@ -37,7 +37,11 @@ const userSchema = new mongoose.Schema({
       role:[{
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'Role', 
-        default: 'user' }]
+        default: 'user' }],
+        mustChangePassword: {
+    type: Boolean,
+    default: false
+}
 });
 
 

@@ -36,7 +36,7 @@ const Comment = () => {
     console.log("Deleting comment with ID:", commentId);
   const token = getToken();
   try {
-    await axios.delete(`http://localhost:3000/comment/${commentId}`, {
+    await axios.delete(`http://localhost:3000/comment/admin/${commentId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

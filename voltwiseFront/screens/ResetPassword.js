@@ -3,42 +3,59 @@ import { Text, View ,TextInput ,StyleSheet,TouchableOpacity, Alert,ActivityIndic
 import { useNavigation } from "@react-navigation/native";
 import style from "./style";
 import GLOBALS from "../global/variables";
+import axios from "axios";
 function ResetPassword(){
     const navigation = useNavigation();
     const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
 
-    const handleResetPassword = async () => {
-        console.log("Reset Password button clicked");
-        console.log("Current email:", email);
-        if (!email.trim()) {
-            Alert.alert("Error", "Please enter your email.");
-            return;
-        }
+  const handleResetPassword = async () => {
+    console.log("Reset Password button clicked");
+    console.log("Current email:", email);
+    
+    if (!email.trim()) {
+        Alert.alert("Error", "Please enter your email.");
+        return;
+    }
 
-        try {
-            setLoading(true);
-            const response = await fetch(`http://${GLOBALS.IP}:3000/auth/sendEmail`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                Alert.alert("Success", data.message || "A reset link has been sent to your email.");
-                navigation.goBack();
-            } else {
-                Alert.alert("Error", data.message || "Something went wrong. Try again.");
+    try {
+        setLoading(true);
+        
+        // Using axios (recommended - cleaner syntax)
+        const response = await axios.post(`http://${GLOBALS.IP}:3000/auth/sendEmail`, {
+            email: email.trim()
+        }, {
+            headers: { 
+                "Content-Type": "application/json" 
             }
-        } catch (error) {
-            Alert.alert("Error", "Network error. Please try again.");
-        } finally {
-            setLoading(false);
-        }
-    };
+        });
 
+        console.log("Reset password response:", response.data);
+
+        Alert.alert(
+            "Success", 
+            response.data.message || "A new password has been sent to your email."
+        );
+        navigation.goBack();
+
+    } catch (error) {
+        console.error("Reset password error:", error);
+        
+        let errorMessage = "Network error. Please try again.";
+        
+        if (error.response) {
+            // Server responded with error status
+            errorMessage = error.response.data.message || "Something went wrong. Try again.";
+        } else if (error.request) {
+            // Request was made but no response received
+            errorMessage = "Unable to connect to server. Please check your internet connection.";
+        }
+        
+        Alert.alert("Error", errorMessage);
+    } finally {
+        setLoading(false);
+    }
+};
 
     return(
         <View style={styles.container}>

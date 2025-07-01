@@ -3,6 +3,7 @@ const router = express.Router();
 
 // Importing the complaint controller
 import { CreateComplaint, deleteComplaint,markComplaintNotificationsAsSeen,getNotificationCount,getComplaintsByUserWithNotifications, getComplaintsByPartner,getComplaintById, getAllComplaints, getComplaintsByUser, transferComplaintToPartner, updateComplaintStatus }from '../controllers/complaintController.js';
+import verifyToken from '../middleware/verifyToken.js';
 
 // Route to add a new complaint
 router.post('/add', CreateComplaint);
@@ -18,7 +19,7 @@ router.get('/user/:userId', getComplaintsByUser);
 // Route to get all complaints
 router.get('/', getAllComplaints);
 
-router.patch('/:complaintId/transfer', transferComplaintToPartner) 
+router.patch('/:complaintId/transfer',verifyToken, transferComplaintToPartner) 
 
 router.get('/complaints/by-partner', getComplaintsByPartner);
 router.patch('/:id/status',updateComplaintStatus);
@@ -30,11 +31,5 @@ router.get('/complaints/user/:userId/notification-count', getNotificationCount);
 
 // Mark notifications as seen
 router.patch('/complaint/user/:userId/mark-seen', markComplaintNotificationsAsSeen);
-router.get('/test-notification/:userId', (req, res) => {
-    res.json({ 
-        message: 'Test route working', 
-        userId: req.params.userId,
-        timestamp: new Date().toISOString()
-    });
-});
+
 export default router;

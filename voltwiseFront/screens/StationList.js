@@ -470,7 +470,7 @@ const StationList = () => {
                 <>
                   <View style={styles.ratingSummary}>
                     <Text style={styles.ratingSummaryText}>
-                      Average: {selectedStationForRatings.averageRating}/5 
+                      // Average: {selectedStationForRatings.averageRating}/5 
                       ({selectedStationForRatings.ratings.length} ratings)
                     </Text>
                   </View>
